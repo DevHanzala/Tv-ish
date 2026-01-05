@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ✅ Base layout */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #000;
+  color: white;
+  overflow-x: hidden;
+  overflow-y: auto; /* allow full page scroll */
+  scroll-behavior: smooth;
+}
+
+/* ✅ Hide scrollbars but keep scroll functionality */
+.scrollbar-hide {
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE and Edge */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;                  /* Chrome, Safari, Opera */
+}
+
+/* ✅ Remove unwanted borders/outlines */
+* {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ✅ Only fix cases where parent blocks scrolling incorrectly */
+.layout-fix {
+  overflow: visible !important;
+}
+
+/* ✅ Smooth upward animation */
+@layer utilities {
+  @keyframes scrollUp {
+    0% {
+      transform: translateY(0%);
+    }
+    100% {
+      transform: translateY(-50%);
+    }
+  }
+
+  .animate-scroll-up {
+    animation: scrollUp 30s linear infinite;
+  }
+}
