@@ -1,5 +1,6 @@
 import React, { useState, useContext } from "react";
-import { ChannelContext } from "../context/ChannelContext";
+import { AuthContext } from "../context/AuthContext";
+
 
 // Helper to convert image file to Base64 string
 function toBase64(file) {
@@ -11,21 +12,37 @@ function toBase64(file) {
   });
 }
 
+// NOTE:
+// Channel-related fields (banner, watermark, links, social links)
+// will be activated once ChannelContext + channel backend exists.
+
+
+// NOTE:
+// This page currently edits USER PROFILE only, not channel data.
+
+
 export default function ChannelCustomization() {
-  const { channel, updateChannel } = useContext(ChannelContext);
   const [activeTab, setActiveTab] = useState("branding");
+  const { user } = useContext(AuthContext);
 
-  const [name, setName] = useState(channel.name);
+
   const [isEditingName, setIsEditingName] = useState(false);
-  const [description, setDescription] = useState(channel.description);
-  const [email, setEmail] = useState(channel.email);
-  const [phone, setPhone] = useState(channel.phone || "");
-  const [links, setLinks] = useState(channel.links || []);
-  const [socialLinks, setSocialLinks] = useState(channel.socialLinks || []);
 
-  const [banner, setBanner] = useState(channel.banner);
-  const [profile, setProfile] = useState(channel.dp);
-  const [watermark, setWatermark] = useState(channel.watermark);
+  // Channel-only state placeholders (disabled until ChannelContext exists)
+const [description, setDescription] = useState("");
+const [links, setLinks] = useState([]);
+const [socialLinks, setSocialLinks] = useState([]);
+const [banner, setBanner] = useState(null);
+const [watermark, setWatermark] = useState(null);
+
+
+
+const [name, setName] = useState(user?.first_name || "");
+// const [description, setDescription] = useState(user?.bio || "");
+const [email, setEmail] = useState(user?.email || "");
+const [phone, setPhone] = useState(user?.phone || "");
+const [profile, setProfile] = useState(user?.avatar || null);
+
 
   const handleAddLink = () => {
     setLinks([...links, { title: "e.g..facebook,insta ", url: "https://" }]);
@@ -63,21 +80,11 @@ export default function ChannelCustomization() {
   };
 
   const handlePublish = () => {
-    updateChannel({
-      name,
-      handle: channel.handle,
-      description,
-      email,
-      phone,
-      links,
-      socialLinks,
-      banner,
-      dp: profile,
-      watermark,
-    });
-    setIsEditingName(false);
-    alert("Changes Published!");
-  };
+  // TEMP: frontend-only confirmation
+  alert("Profile changes saved (backend sync pending)");
+  setIsEditingName(false);
+};
+
 
   return (
     <div className="bg-black text-white min-h-screen p-6 pt-24">
@@ -127,7 +134,7 @@ export default function ChannelCustomization() {
               <div className="relative w-full h-56 bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
                 {banner ? (
                   <img
-                    src={banner}
+                    // src={banner}
                     alt="Banner"
                     className="w-full h-full object-cover"
                   />
@@ -216,10 +223,13 @@ export default function ChannelCustomization() {
                       </>
                     )}
                   </div>
-                  <p className="text-gray-400">{channel.handle}</p>
+
+                  {/* Channel handle & public URL will be shown once ChannelContext is implemented */}
+
+                  {/* <p className="text-gray-400">{channel.handle}</p>
                   <p className="text-sm text-gray-500 mt-1">
                     www.TV-ISH.com/c/123XH
-                  </p>
+                  </p> */}
                 </div>
               </div>
             </div>
@@ -230,7 +240,7 @@ export default function ChannelCustomization() {
               <div className="relative w-36 h-20 bg-gray-900 rounded-lg overflow-hidden border border-gray-700">
                 {watermark ? (
                   <img
-                    src={watermark}
+                    // src={watermark}
                     alt="Watermark"
                     className="w-full h-full object-contain"
                   />
@@ -315,7 +325,7 @@ export default function ChannelCustomization() {
                 <div key={idx} className="flex flex-col sm:flex-row sm:space-x-3 mb-2">
                   <input
                     type="text"
-                    value={link.platform}
+                    // value={link.platform}
                     onChange={(e) => {
                       const newLinks = [...socialLinks];
                       newLinks[idx].platform = e.target.value;
@@ -326,7 +336,7 @@ export default function ChannelCustomization() {
                   />
                   <input
                     type="text"
-                    value={link.url}
+                    // value={link.url}
                     onChange={(e) => {
                       const newLinks = [...socialLinks];
                       newLinks[idx].url = e.target.value;

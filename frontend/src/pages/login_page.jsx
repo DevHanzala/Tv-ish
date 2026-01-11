@@ -8,7 +8,8 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChannelContext } from "../context/ChannelContext"; // Adjust path as needed
+import { useAuth } from "../hooks/useAuth";
+
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,8 +18,12 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  // Get login function from context
-  const { login } = useContext(ChannelContext);
+  const { login, socialLogin } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
+
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -28,20 +33,24 @@ const LoginPage = () => {
 
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
-      alert("Please enter both user ID and password.");
+      setError("Please enter both email and password.");
       return;
     }
 
-    const success = login(email, password);
-    if (success) {
-      localStorage.setItem("isLoggedIn", "true"); // Optional: keep track of login
-      navigate("/HomePage"); // Redirect after login
-    } else {
-      alert("Invalid user ID or password. Please try again.");
+    try {
+      setLoading(true);
+      setError("");
+      await login({ email, password, remember: rememberMe });
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Invalid credentials");
+    } finally {
+      setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col md:flex-row overflow-hidden relative">
@@ -112,7 +121,7 @@ const LoginPage = () => {
           {/* User ID Input (Email field renamed for clarity) */}
           <input
             type="text"
-            placeholder="User ID"
+            placeholder="Email address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full p-2 rounded-md bg-gray-800 border border-gray-700 text-white"
@@ -139,8 +148,14 @@ const LoginPage = () => {
 
           {/* Remember & Forgot */}
           <div className="flex justify-between text-sm text-gray-400">
+            {error && <p className="text-red-500 text-sm">{error}</p>}
             <label className="flex items-center space-x-1 cursor-pointer">
-              <input type="checkbox" className="accent-red-500" />
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+                className="accent-red-500"
+              />
               <span>Remember Me</span>
             </label>
             <button
@@ -154,11 +169,13 @@ const LoginPage = () => {
 
           {/* Login Button */}
           <button
-            className="w-full bg-blue-700 hover:bg-blue-800 transition p-2 rounded-md"
+            className="w-full bg-blue-700 hover:bg-blue-800 transition p-2 rounded-md disabled:opacity-50"
             onClick={handleLogin}
+            disabled={loading}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
+
 
           {/* Signup Link */}
           <p className="text-center text-sm text-gray-400">
@@ -182,13 +199,22 @@ const LoginPage = () => {
           {/* Social Login */}
           <div className="flex justify-center gap-6">
             <motion.div whileHover={{ scale: 1.2, transition: { duration: 0.3 } }}>
-              <FaFacebook className="text-3xl cursor-pointer hover:text-blue-500" />
+              <FaFacebook
+                className="text-3xl cursor-pointer hover:text-blue-500"
+                onClick={() => socialLogin("facebook")}
+              />
             </motion.div>
             <motion.div whileHover={{ scale: 1.2, transition: { duration: 0.3 } }}>
-              <FaGoogle className="text-3xl cursor-pointer hover:text-red-500" />
+              <FaGoogle
+                className="text-3xl cursor-pointer hover:text-red-500"
+                onClick={() => socialLogin("google")}
+              />
             </motion.div>
             <motion.div whileHover={{ scale: 1.2, transition: { duration: 0.3 } }}>
-              <FaLinkedin className="text-3xl cursor-pointer hover:text-blue-400" />
+            <FaLinkedin
+  className="text-3xl cursor-pointer hover:text-blue-400"
+  onClick={() => socialLogin("linkedin")}
+/>
             </motion.div>
           </div>
         </div>

@@ -1,27 +1,23 @@
 import express from "express";
-import cors from "cors";
 import "dotenv/config";
-import { supabase } from "./services/supabaseClient.js";
+import { corsConfig } from "./config/cors.js";
+
+import authRoutes from "./routes/auth.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// CORS (development only)
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN,
-    credentials: true,
-  })
-);
-
+app.use(corsConfig);
 app.use(express.json());
 
-// Health route
+// Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
+
+// Health check (NO DB logic)
 app.get("/health", (req, res) => {
-  res.status(200).json({
-    status: "ok",
-    environment: process.env.NODE_ENV,
-  });
+  res.status(200).json({ status: "ok" });
 });
 
 

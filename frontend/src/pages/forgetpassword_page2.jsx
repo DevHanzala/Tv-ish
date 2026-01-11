@@ -1,11 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/useAuth";
+
 
 const ForgotPasswordPage2 = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || "username@gmail.com";
+  const email = location.state?.email || "";
+
+  const { forgotPasswordVerifyOtp } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
 
   const [code, setCode] = useState(new Array(6).fill(""));
   const inputsRef = useRef([]);
@@ -50,16 +57,32 @@ const ForgotPasswordPage2 = () => {
       inputsRef.current[5]?.focus();
     }
   };
-
-  const handleVerify = () => {
-    const finalCode = code.join("");
-    if (finalCode.length !== 6 || code.includes("")) {
-      alert("Please enter the complete 6-digit code.");
+  const handleVerify = async () => {
+    const otp = code.join("");
+    if (otp.length !== 6) {
+      setError("Please enter the complete code.");
       return;
     }
 
-    navigate("/resetpassword_page", { state: { email } });
+    try {
+      setLoading(true);
+      setError("");
+      const res = await forgotPasswordVerifyOtp({
+        email,
+        token: otp,
+      });
+
+      navigate("/reset-password", {
+        state: { accessToken: res.data.accessToken },
+      });
+
+    } catch (err) {
+      setError(err?.response?.data?.message || "Invalid OTP");
+    } finally {
+      setLoading(false);
+    }
   };
+
 
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
   const imagesToShow = isMobile ? [] : images.slice(0, 10); // ❌ Hide posters on mobile
@@ -76,7 +99,7 @@ const ForgotPasswordPage2 = () => {
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col md:flex-row overflow-hidden">
-      
+
       {/* ✅ Left: Glowing Clickable Logo + Posters (desktop only) */}
       <div className="relative md:w-1/2 p-4 flex flex-col items-start overflow-hidden">
 
@@ -143,7 +166,7 @@ const ForgotPasswordPage2 = () => {
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         <div className="w-full max-w-md space-y-6 text-center">
-          
+
           {/* Top Nav */}
           <div className="flex justify-between items-start text-sm text-gray-300">
             <button
@@ -181,14 +204,18 @@ const ForgotPasswordPage2 = () => {
               />
             ))}
           </div>
+          {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
 
           {/* Verify Button */}
           <button
             onClick={handleVerify}
-            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 transition p-3 rounded-md font-semibold"
+            disabled={loading}
+            className="w-full mt-6 bg-blue-600 hover:bg-blue-700 transition p-3 rounded-md font-semibold disabled:opacity-50"
           >
-            Next
+            {loading ? "Verifying..." : "Next"}
           </button>
+
+
 
           {/* Resend / Try Different Email */}
           <p className="text-xs text-gray-400 mt-4">

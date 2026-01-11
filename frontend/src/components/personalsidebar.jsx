@@ -1,27 +1,22 @@
-import React, { useEffect, useState, useContext } from 'react';
+import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChannelContext } from '../context/ChannelContext'; // 👈 Import context
+import { AuthContext } from '../context/AuthContext';
+
 
 const PersonalSidebar = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  const { channel } = useContext(ChannelContext);  // 👈 Get user info from context
+  const { user, profile, logout } = useContext(AuthContext);
 
-  useEffect(() => {
-    const loggedIn = localStorage.getItem('isLoggedIn');
-    setIsLoggedIn(loggedIn === 'true');
-  }, []);
 
   const handleLogin = () => {
     navigate('/login');
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('isLoggedIn');
-    setIsLoggedIn(false);
-    navigate('/');
-  };
+const handleLogout = async () => {
+  await logout();   // backend + cookie cleared
+  navigate('/');
+};
 
   const handleAccountClick = () => {
     navigate('/history');
@@ -29,15 +24,21 @@ const PersonalSidebar = () => {
 
   return (
     <div className="bg-zinc-900 text-white w-64 rounded-lg shadow-lg p-4 h-full">
-      {isLoggedIn ? (
+      {user ? (
         <div className="flex flex-col items-center">
           <img
-            src={channel.dp || 'https://i.pravatar.cc/100?img=3'}
+            src={profile?.avatar_url || 'https://i.pravatar.cc/100?img=3'}
             alt="Profile"
             className="w-16 h-16 rounded-full mb-2 border-2 border-zinc-700"
           />
-          <h2 className="text-lg font-semibold">{channel.name || 'User Name'}</h2>
-          <p className="text-sm text-gray-400">{channel.description || 'My Channel'}</p>
+
+          <h2 className="text-lg font-semibold">
+            {profile?.first_name} {profile?.last_name}
+          </h2>
+
+          <p className="text-sm text-gray-400">
+            {profile?.email}
+          </p>
 
           <div className="mt-4 w-full space-y-2">
             <button

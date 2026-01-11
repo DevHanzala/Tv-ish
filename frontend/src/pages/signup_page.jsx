@@ -2,14 +2,18 @@ import React, { useState, useEffect, useContext } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ChannelContext } from "../context/ChannelContext"; // adjust path if needed
+import { useAuth } from "../hooks/useAuth";
+
 
 const SignupPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
 
-  const { setSignupDraft } = useContext(ChannelContext);
+  const { signupSendOtp } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
 
   // Form values
   const [firstName, setFirstName] = useState("");
@@ -24,23 +28,31 @@ const SignupPage = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const handleContinue = () => {
-    // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
-      alert("Please fill in all required fields.");
-      return;
-    }
+const handleContinue = async () => {
+  if (!firstName || !lastName || !email || !password) {
+    setError("Please fill in all required fields.");
+    return;
+  }
 
-    setSignupDraft({
-      name: `${firstName} ${lastName}`,
-      handle: `@${firstName}-${lastName}`.toLowerCase().replace(/\s+/g, ""),
-      email,
-      phone,
-      password,
-    });
+  try {
+    setLoading(true);
+    setError("");
 
-    navigate("/signup_page2");
-  };
+    await signupSendOtp(email, password);
+
+    sessionStorage.setItem(
+      "signupDraft",
+      JSON.stringify({ email, password, firstName, lastName })
+    );
+
+    navigate("/signup_page2"); // ✅ ONLY THIS NAVIGATION
+  } catch (err) {
+    setError(err?.response?.data?.message || "Failed to send OTP");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
   const imagesToShow = isMobile ? [] : images.slice(0, 10); // Posters hidden on mobile
@@ -59,7 +71,7 @@ const SignupPage = () => {
     <div className="min-h-screen md:h-[150vh] bg-black text-white flex flex-col md:flex-row overflow-hidden">
       {/* Left Side — Logo and Posters (Posters only on Desktop) */}
       <div className="relative md:w-1/2 p-4 flex flex-col items-start overflow-hidden">
-        <div 
+        <div
           className="z-50 mt-10 relative cursor-pointer"
           onClick={() => navigate("/")}
           style={{
@@ -67,7 +79,7 @@ const SignupPage = () => {
             transform: "translateY(-10px)",
             width: isMobile ? "150px" : "200px",
             height: isMobile ? "65px" : "85px",
-            filter: isMobile 
+            filter: isMobile
               ? `
                 drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) 
                 drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))
@@ -193,18 +205,24 @@ const SignupPage = () => {
             </button>
           </div>
 
+          {error && (
+            <p className="text-sm text-red-500 mt-1">{error}</p>
+          )}
+
+
           <p className="text-xs text-gray-400">
             By signing in, you're agree to our{" "}
             <span className="text-blue-400 underline cursor-pointer">Terms & Condition</span> and{" "}
             <span className="text-blue-400 underline cursor-pointer">Privacy Policy.</span>
           </p>
-
           <button
-            className="w-full bg-blue-700 hover:bg-blue-800 transition p-2 rounded-md"
+            disabled={loading}
+            className="w-full bg-blue-700 hover:bg-blue-800 transition p-2 rounded-md disabled:opacity-60"
             onClick={handleContinue}
           >
-            Continue
+            {loading ? "Sending Code..." : "Continue"}
           </button>
+
 
           <p className="text-center text-sm text-gray-400">
             Already have account?{" "}

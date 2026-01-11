@@ -9,7 +9,8 @@ import {
 // Import your Context Providers
 // import { UserProvider } from "./context/UserContext";      // assuming these exist
 // import { VideoProvider } from "./context/VideoContext";    // assuming these exist
-import { ChannelProvider } from "./context/ChannelContext"; // Add this import
+import { AuthProvider } from "./context/AuthContext";
+import AuthGuard from "./guards/AuthGuard";
 
 // Page Components
 import ScrollToTop from "./components/ScrollToTop";
@@ -35,8 +36,8 @@ import Notification from "./components/notification";
 // Dashboard Pages
 import Dashboard from "./pages/dashboard";
 import MyVideos from "./components/my-videos";
-import Liked from "./pages/liked";  
-import Playlist from "./pages/playlist";  
+import Liked from "./pages/liked";
+import Playlist from "./pages/playlist";
 import WatchLater from "./pages/watch-later";
 import History from "./pages/history";
 import Settings from "./pages/settings";
@@ -67,7 +68,7 @@ import UploadVideos2 from "./components/uploadvideos2";
 import UploadVideos3 from "./components/uploadvideos3";
 import UploadVideos4 from "./components/uploadvideos4";
 import UploadVideos5 from "./components/uploadvideos5";
-import Monetization from "./components/Monetization" ;
+import Monetization from "./components/Monetization";
 import Livestream from "./components/livestream";
 
 
@@ -87,11 +88,10 @@ import News from "./pages/news";
 
 
 import Content from "./components/Content";
-import Trend from "./components/Trend" ; 
-import Audience from "./components/Audience" ;
+import Trend from "./components/Trend";
+import Audience from "./components/Audience";
 
 
-import Aboutus from "./pages/aboutus"  ; 
 import AboutUs from "./pages/aboutus";
 
 
@@ -120,7 +120,7 @@ const MainLayout = ({ children }) => {
     "/NotificationPreferences",
     "/PrivacyControls",
     "/ChangePassword",
-    "/TwoFactorAuth", 
+    "/TwoFactorAuth",
     "/LanguagePreferences",
     "/ThemePreferences",
     "/BlockedUsers",
@@ -139,12 +139,12 @@ const MainLayout = ({ children }) => {
     "/copyrightform",
     "/customization",
     "/news",
-    "/uploadvideos2" ,
-    "/uploadvideos3" ,
-    "/uploadvideos4" ,
-    "/uploadvideos5" , 
-    "/Monetization" ,
-    "/livestream" ,
+    "/uploadvideos2",
+    "/uploadvideos3",
+    "/uploadvideos4",
+    "/uploadvideos5",
+    "/Monetization",
+    "/livestream",
   ];
 
   // Hide Navbar/Footer if current path matches hide list or dashboard subroutes
@@ -154,40 +154,40 @@ const MainLayout = ({ children }) => {
 
   // Show Sidebar on dashboard and dashboard-related pages (old sidebar)
   const shouldShowSidebar =
-    location.pathname.startsWith("/liked")||
-    location.pathname.startsWith("/playlist")|| 
-    location.pathname.startsWith("/watch-later")||
-    location.pathname.startsWith("/history")||
-    location.pathname.startsWith("/settings")||
-    location.pathname.startsWith("/ProfileInfo")||
-    location.pathname.startsWith("/EmailAddress")||
-    location.pathname.startsWith("/NotificationPreferences")||
-    location.pathname.startsWith("/ChangePassword")||
-    location.pathname.startsWith("/TwoFactorAuth")||
-    location.pathname.startsWith("/LanguagePreferences")||
-    location.pathname.startsWith("/nameedit")||
+    location.pathname.startsWith("/liked") ||
+    location.pathname.startsWith("/playlist") ||
+    location.pathname.startsWith("/watch-later") ||
+    location.pathname.startsWith("/history") ||
+    location.pathname.startsWith("/settings") ||
+    location.pathname.startsWith("/ProfileInfo") ||
+    location.pathname.startsWith("/EmailAddress") ||
+    location.pathname.startsWith("/NotificationPreferences") ||
+    location.pathname.startsWith("/ChangePassword") ||
+    location.pathname.startsWith("/TwoFactorAuth") ||
+    location.pathname.startsWith("/LanguagePreferences") ||
+    location.pathname.startsWith("/nameedit") ||
     location.pathname.startsWith("/accountownership") ||
-    location.pathname.startsWith("/emailnotification") || 
-    location.pathname.startsWith("/uploadvideos") || 
-    location.pathname.startsWith("/uploadvideos2") || 
+    location.pathname.startsWith("/emailnotification") ||
+    location.pathname.startsWith("/uploadvideos") ||
+    location.pathname.startsWith("/uploadvideos2") ||
     location.pathname.startsWith("/uploadvideos3") ||
-    location.pathname.startsWith("/uploadvideos4") || 
+    location.pathname.startsWith("/uploadvideos4") ||
     location.pathname.startsWith("/uploadvideos5") ||
     location.pathname.startsWith("/Monetization") ||
-    location.pathname.startsWith("/livestream") ;
+    location.pathname.startsWith("/livestream");
 
 
   // Show Sidebar2 on specific pages (new sidebar)
   const shouldShowSidebar2 =
     location.pathname.startsWith("/dashboard") ||
     location.pathname.startsWith("/my-videos") || // add more paths here if needed
-    location.pathname.startsWith("/analytics") || 
+    location.pathname.startsWith("/analytics") ||
     location.pathname.startsWith("/community") ||
-    location.pathname.startsWith("/subtitles") || 
+    location.pathname.startsWith("/subtitles") ||
     location.pathname.startsWith("/copyright") ||
     location.pathname.startsWith("/copyrightform") ||
     location.pathname.startsWith("/customization") ||
-    location.pathname.startsWith("/news") ;  // new route with Sidebar2
+    location.pathname.startsWith("/news");  // new route with Sidebar2
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white">
@@ -224,13 +224,12 @@ const MainLayout = ({ children }) => {
 function App() {
   return (
     <Router>
-      <UploadProvider>     {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
-        <ChannelProvider> 
-          {/* Added ChannelProvider here */}
+      <AuthProvider>
+        <UploadProvider>     {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
           <ScrollToTop />
           <MainLayout>
             <Routes>
-              
+
               {/* Public Routes */}
               <Route path="/" element={<HomePage />} />
               <Route path="/HomePage" element={<HomePage />} />
@@ -245,7 +244,7 @@ function App() {
               <Route path="/snips_open" element={<SnipsOpen />} />
 
               <Route path="/searchBar" element={<SearchBar />} />
-              
+
               {/* Auth Routes */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup_page" element={<SignupPage />} />
@@ -258,56 +257,55 @@ function App() {
               <Route path="/navbar" element={<NavbarPage />} />
 
               {/* Dashboard Routes */}
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/my-videos" element={<MyVideos />} />
-              <Route path="/my-vedio" element={<MyVideos />} />
-              <Route path="/liked" element={<Liked/>} />
-              <Route path="/playlist" element={<Playlist/>} />
-              <Route path="/watch-later" element={<WatchLater/>} />
-              <Route path="/history" element={<History/>} />
-              <Route path="/settings" element={<Settings/>} />
-              <Route path="/ProfileInfo" element={<ProfileInfo/>} />
-              <Route path="/EmailAddress" element={<EmailAddress/>} />
-              <Route path="/NotificationPreferences" element={<NotificationPreferences/>} />
-              <Route path="/ChangePassword" element={<ChangePassword/>} />
-              <Route path="/TwoFactorAuth" element={<TwoFactorAuthentication/>} />
-              <Route path="/LanguagePreferences" element={<LanguagePreferences/>} />
-              <Route path="/nameedit" element={<NameEdit/>} />
-              <Route path="/AccountOwnership" element={<AccountOwnership/>} />
-              <Route path="/emailnotification" element={<EmailNotification/>} />
+              <Route path="/dashboard" element={<AuthGuard><Dashboard /></AuthGuard>} />
+              <Route path="/my-videos" element={<AuthGuard><MyVideos /></AuthGuard>} />
+              <Route path="/my-vedio" element={<AuthGuard><MyVideos /></AuthGuard>} />
+              <Route path="/liked" element={<AuthGuard><Liked /></AuthGuard>} />
+              <Route path="/playlist" element={<AuthGuard><Playlist /></AuthGuard>} />
+              <Route path="/watch-later" element={<AuthGuard><WatchLater /></AuthGuard>} />
+              <Route path="/history" element={<AuthGuard><History /></AuthGuard>} />
+              <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
+              <Route path="/ProfileInfo" element={<AuthGuard><ProfileInfo /></AuthGuard>} />
+              <Route path="/EmailAddress" element={<AuthGuard><EmailAddress /></AuthGuard>} />
+              <Route path="/NotificationPreferences" element={<AuthGuard><NotificationPreferences /></AuthGuard>} />
+              <Route path="/ChangePassword" element={<AuthGuard><ChangePassword /></AuthGuard>} />
+              <Route path="/TwoFactorAuth" element={<AuthGuard><TwoFactorAuthentication /></AuthGuard>} />
+              <Route path="/LanguagePreferences" element={<AuthGuard><LanguagePreferences /></AuthGuard>} />
+              <Route path="/nameedit" element={<AuthGuard><NameEdit /></AuthGuard>} />
+              <Route path="/AccountOwnership" element={<AuthGuard><AccountOwnership /></AuthGuard>} />
+              <Route path="/emailnotification" element={<AuthGuard><EmailNotification /></AuthGuard>} />
 
               {/* Upload */}
-              <Route path="/uploadvideos" element={<UploadVideos />} /> 
-              <Route path="/uploadvideos2" element={<UploadVideos2 />} /> 
-              <Route path="/uploadvideos3" element={<UploadVideos3 />} />
-              <Route path="/uploadvideos4" element={<UploadVideos4 />} />
-              <Route path="/uploadvideos5" element={<UploadVideos5 />} />
+              <Route path="/uploadvideos" element={<AuthGuard><UploadVideos /></AuthGuard>} />
+              <Route path="/uploadvideos2" element={<AuthGuard><UploadVideos2 /></AuthGuard>} />
+              <Route path="/uploadvideos3" element={<AuthGuard><UploadVideos3 /></AuthGuard>} />
+              <Route path="/uploadvideos4" element={<AuthGuard><UploadVideos4 /></AuthGuard>} />
+              <Route path="/uploadvideos5" element={<AuthGuard><UploadVideos5 /></AuthGuard>} />
+              <Route path="/Monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
+              <Route path="/notification" element={<AuthGuard><Notification /></AuthGuard>} />
+              <Route path="/AI" element={<AuthGuard><AI /></AuthGuard>} />
+              <Route path="/VideoFeed" element={<AuthGuard><VideoFeed /></AuthGuard>} />
+              <Route path="/plans" element={<AuthGuard><PlansPage /></AuthGuard>} />
 
-              <Route path="/Monetization" element={<Monetization />} />
-              <Route path="/notification" element={<Notification/>} />
-              <Route path="/AI" element={<AI/>} />
-              <Route path="/VideoFeed" element={<VideoFeed/>} />
-              <Route path="/plans" element={<PlansPage/>} />
-
-              <Route path="/dashboard_sidebar" element={<dashboard_sidebar/>} />
-              <Route path="/analytics" element={<Analytics/>} /> 
-              <Route path="/Content" element={<Content/>} />
-              <Route path="/community" element={<Community/>} /> 
-              <Route path="/subtitles" element={<Subtitles/>} /> 
-              <Route path="/copyright" element={<Copyright/>} />
-              <Route path="/copyrightform" element={<Copyrightform/>} /> 
-              <Route path="/customization" element={<Customization/>} />
-              <Route path="/news" element={<News/>} /> 
-              <Route path="/content" element={<Content />} />
-              <Route path="/Trend" element={<Trend />} />  
-              <Route path="/Audience" element={<Audience />} />  
-              <Route path="/aboutus" element={<AboutUs />} />  
-              <Route path="/livestream" element={<Livestream/> } />
+              <Route path="/dashboard_sidebar" element={<AuthGuard><DashboardSidebar /></AuthGuard>} />
+              <Route path="/analytics" element={<AuthGuard><Analytics /></AuthGuard>} />
+              <Route path="/Content" element={<AuthGuard><Content /></AuthGuard>} />
+              <Route path="/community" element={<AuthGuard><Community /></AuthGuard>} />
+              <Route path="/subtitles" element={<AuthGuard><Subtitles /></AuthGuard>} />
+              <Route path="/copyright" element={<AuthGuard><Copyright /></AuthGuard>} />
+              <Route path="/copyrightform" element={<AuthGuard><Copyrightform /></AuthGuard>} />
+              <Route path="/customization" element={<AuthGuard><Customization /></AuthGuard>} />
+              <Route path="/news" element={<AuthGuard><News /></AuthGuard>} />
+              <Route path="/content" element={<AuthGuard><Content /></AuthGuard>} />
+              <Route path="/Trend" element={<AuthGuard><Trend /></AuthGuard>} />
+              <Route path="/Audience" element={<AuthGuard><Audience /></AuthGuard>} />
+              <Route path="/aboutus" element={<AuthGuard><AboutUs /></AuthGuard>} />
+              <Route path="/livestream" element={<AuthGuard><Livestream /></AuthGuard>} />
 
             </Routes>
           </MainLayout>
-        </ChannelProvider>
-      </UploadProvider>   {/* <-- CONTEXT END */}
+        </UploadProvider>
+      </AuthProvider >   {/* <-- CONTEXT END */}
     </Router>
   );
 }

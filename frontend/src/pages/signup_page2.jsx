@@ -1,17 +1,26 @@
 import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ChannelContext } from "../context/ChannelContext";
+import { useAuth } from "../hooks/useAuth";
+
 
 const SignupPage2 = () => {
   const navigate = useNavigate();
-  const { signupDraft, setChannel, login } = useContext(ChannelContext);
+ const { signupVerifyOtp, signupSendOtp } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const email = signupDraft?.email || "username@gmail.com";
-  const DEFAULT_CODE = "123456"; // ✅ Hardcoded OTP
+  const [code, setCode] = useState(["", "", "", "", "", ""]);
+const draft = JSON.parse(sessionStorage.getItem("signupDraft"));
+const { email, password, firstName, lastName } = draft || {};
 
-  const [code, setCode] = useState(new Array(6).fill(""));
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    if (!draft) navigate("/signup_page");
+  }, []);
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -27,6 +36,8 @@ const SignupPage2 = () => {
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
   const imagesToShow = isMobile ? [] : images.slice(0, 10);
 
+
+  
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
@@ -48,6 +59,20 @@ const SignupPage2 = () => {
     }
   };
 
+ const handleResend = async () => {
+  try {
+    setLoading(true);
+    await signupSendOtp(email, password);
+  } catch {
+    setError("Failed to resend OTP");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
+
   const handlePaste = (event) => {
     event.preventDefault();
     const pasteData = event.clipboardData.getData("text").slice(0, 6);
@@ -57,52 +82,48 @@ const SignupPage2 = () => {
       if (lastInput) lastInput.focus();
     }
   };
+const verifyCode = async () => {
+  const otp = code.join("");
+  if (otp.length !== 6) {
+    setError("Please enter the complete 6-digit code.");
+    return;
+  }
 
-  const verifyCode = () => {
-    const enteredCode = code.join("");
-    if (enteredCode.length < 6) {
-      alert("Please enter the complete 6-digit code.");
-      return;
-    }
+  try {
+    setLoading(true);
+    setError("");
 
-    if (enteredCode !== DEFAULT_CODE) {
-      alert("Incorrect code. Please try again.");
-      return;
-    }
-
-    if (!signupDraft) {
-      alert("Signup data missing. Please restart registration.");
-      navigate("/signup");
-      return;
-    }
-
-    const newUser = {
-      ...signupDraft,
-      verified: true,
-      createdAt: new Date().toISOString(),
-    };
-
-    localStorage.setItem("tvish-user", JSON.stringify(newUser));
-    setChannel(newUser);
-    login();
+    await signupVerifyOtp({
+      email,
+      token: otp,
+      firstName,
+      lastName,
+    });
 
     navigate("/dashboard");
-  };
+  } catch (err) {
+    setError(err?.response?.data?.message || "OTP verification failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col md:flex-row overflow-hidden">
 
       {/* Left Side — Logo + Posters */}
       <div className="relative md:w-1/2 p-4 flex flex-col items-start overflow-hidden">
-        <div 
+        <div
           className="z-50 mt-10 relative cursor-pointer"
           onClick={() => navigate("/")}
           style={{
-            marginLeft: "-12px",  
+            marginLeft: "-12px",
             transform: "translateY(-10px)",
             width: isMobile ? "150px" : "200px",
-            height: isMobile ? "65px" : "85px", 
-            filter: isMobile 
+            height: isMobile ? "65px" : "85px",
+            filter: isMobile
               ? `drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))`
               : `drop-shadow(0 0 15px rgba(200, 200, 200, 0.9)) drop-shadow(0 0 30px rgba(180, 180, 180, 0.7)) drop-shadow(0 0 45px rgba(150, 150, 150, 0.5))`,
           }}
@@ -166,8 +187,7 @@ const SignupPage2 = () => {
           <p className="text-sm text-gray-300 mb-8 text-center sm:text-left">
             We've sent a 6-digit confirmation code to{" "}
             <span className="text-blue-600 underline">{email}</span>.<br />
-            <span className="text-green-400 font-semibold">Dev Note:</span>{" "}
-            Use code <span className="text-yellow-400 font-bold">{DEFAULT_CODE}</span> to continue.
+            Please enter it below to verify your account.
           </p>
 
           <div
@@ -190,20 +210,27 @@ const SignupPage2 = () => {
           </div>
 
           <button
+            disabled={loading}
             onClick={verifyCode}
-            className="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-md font-semibold"
+            className="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-md font-semibold disabled:opacity-60"
           >
-            Verify
+            {loading ? "Verifying..." : "Verify"}
           </button>
+          {error && (
+            <p className="mt-3 text-sm text-red-500 text-center">{error}</p>
+          )}
+
+
 
           <p className="mt-6 text-center text-gray-400 text-sm">
             Didn&apos;t receive code?{" "}
             <button
-              onClick={() => alert(`Resend feature coming soon!\nTry using ${DEFAULT_CODE}`)}
+              onClick={handleResend}
               className="text-blue-400 underline hover:text-blue-600"
             >
               Resend Code
             </button>
+
           </p>
         </div>
       </motion.div>

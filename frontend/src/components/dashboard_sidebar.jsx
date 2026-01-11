@@ -17,9 +17,9 @@ import {
   FaTimes,
   FaChartBar,
 } from "react-icons/fa";
+import { AuthContext } from "../context/AuthContext";
 
 import Notification from "./notification";
-import { ChannelContext } from "../context/ChannelContext";
 
 const DashboardSidebar = ({
   showSearch = true,
@@ -30,7 +30,8 @@ const DashboardSidebar = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
-  const { channel } = useContext(ChannelContext);
+  const {  profile, logout } = useContext(AuthContext);
+
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const toggleNotif = () => setNotifOpen(!notifOpen);
@@ -64,11 +65,12 @@ const DashboardSidebar = ({
       icon: <FaSignOutAlt />,
       path: "/login",
       red: true,
-      onClick: () => {
-        localStorage.removeItem("isLoggedIn");
+      onClick: async () => {
+        await logout();
         navigate("/login");
         setSidebarOpen(false);
       },
+
     },
   ];
 
@@ -79,8 +81,8 @@ const DashboardSidebar = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
-          channel={channel}
-          onItemClick={() => {}}
+          // channel={channel}
+          onItemClick={() => { }}
         />
       </aside>
 
@@ -106,9 +108,9 @@ const DashboardSidebar = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
-          channel={channel}
-          onItemClick={() => setSidebarOpen(false)}
+          profile={profile}
         />
+
       </aside>
 
       {/* TOPBAR */}
@@ -183,18 +185,22 @@ const DashboardSidebar = ({
   );
 };
 
-const SidebarContent = ({ menuItems, bottomItems, channel, onItemClick }) => (
+const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick }) => (
   <div className="flex flex-col h-full pt-6 lg:pt-16">
     {/* PROFILE SECTION */}
     <div className="flex flex-col items-center py-2 lg:py-6 border-b border-gray-700">
       <img
-        src={channel?.dp || "https://i.pravatar.cc/100?img=3"}
+        src={profile?.avatar_url || "https://i.pravatar.cc/100?img=3"}
         alt="Profile"
         className="w-20 h-20 rounded-full mb-2 border-4 border-red-500 shadow-md"
       />
-      <h2 className="text-lg font-semibold">{channel?.name || "User Name"}</h2>
+
+      <h2 className="text-lg font-semibold">
+        {profile?.first_name} {profile?.last_name}
+      </h2>
+
       <p className="text-sm text-gray-400">
-        {channel?.description || "Web Developer"}
+        {profile?.email}
       </p>
     </div>
 
@@ -206,10 +212,9 @@ const SidebarContent = ({ menuItems, bottomItems, channel, onItemClick }) => (
             key={item.label}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 transition select-none ${
-                isActive
-                  ? "bg-red-600 text-white"
-                  : "text-white hover:bg-gray-800"
+              `flex items-center px-6 py-3 transition select-none ${isActive
+                ? "bg-red-600 text-white"
+                : "text-white hover:bg-gray-800"
               }`
             }
             onClick={onItemClick}
@@ -238,10 +243,9 @@ const SidebarContent = ({ menuItems, bottomItems, channel, onItemClick }) => (
             key={item.label}
             to={item.path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 transition select-none ${
-                isActive
-                  ? "bg-red-600 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              `flex items-center px-6 py-3 transition select-none ${isActive
+                ? "bg-red-600 text-white"
+                : "text-gray-400 hover:bg-gray-800 hover:text-white"
               }`
             }
             onClick={onItemClick}

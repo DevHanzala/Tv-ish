@@ -1,11 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+
 
 const ForgotPasswordPage = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [email, setEmail] = useState("");
   const navigate = useNavigate();
+
+  const { forgotPasswordSendOtp } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
@@ -25,38 +32,41 @@ const ForgotPasswordPage = () => {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
-
-  const handleNext = () => {
+  const handleNext = async () => {
     if (!email.trim()) {
-      alert("Please enter your email.");
+      setError("Please enter your email.");
       return;
     }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(email.trim())) {
-      alert("Please enter a valid email address.");
-      return;
+    try {
+      setLoading(true);
+      setError("");
+     await forgotPasswordSendOtp(email);
+navigate("/forgot-password-verify", { state: { email } });
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to send reset OTP");
+    } finally {
+      setLoading(false);
     }
-
-    navigate("/forgetpassword_page2", { state: { email: email.trim() } });
   };
+
 
   return (
     <div className="min-h-screen bg-black text-white flex flex-col md:flex-row overflow-hidden">
-      
+
       {/* ✅ Left Side — Glowing Logo + Posters (Desktop Only) */}
       <div className="relative md:w-1/2 p-4 flex flex-col items-start overflow-hidden">
-        
+
         {/* ✅ Clickable Logo */}
-        <div 
-          className="z-50 mt-10 relative cursor-pointer" 
+        <div
+          className="z-50 mt-10 relative cursor-pointer"
           onClick={() => navigate("/")}
           style={{
-            marginLeft: "-12px",  
+            marginLeft: "-12px",
             transform: "translateY(-10px)",
             width: isMobile ? "150px" : "200px",
-            height: isMobile ? "65px" : "85px", 
-            filter: isMobile 
+            height: isMobile ? "65px" : "85px",
+            filter: isMobile
               ? `drop-shadow(0 0 4px rgba(255, 255, 255, 0.5)) drop-shadow(0 0 8px rgba(255, 255, 255, 0.5))`
               : `drop-shadow(0 0 15px rgba(200, 200, 200, 0.9)) drop-shadow(0 0 30px rgba(180, 180, 180, 0.7)) drop-shadow(0 0 45px rgba(150, 150, 150, 0.5))`,
           }}
@@ -104,7 +114,7 @@ const ForgotPasswordPage = () => {
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         <div className="w-full max-w-md space-y-6" role="main">
-          
+
           {/* Top Nav */}
           <div className="w-full flex items-center justify-between text-sm text-gray-300 mb-2">
             <button
@@ -151,16 +161,18 @@ const ForgotPasswordPage = () => {
               Enter the email address associated with your account.
             </p>
           </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           {/* Next Button */}
           <button
-            className="w-full bg-blue-700 hover:bg-blue-800 transition p-2 rounded-md font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
             onClick={handleNext}
-            type="button"
-            aria-label="Proceed to next step"
+            disabled={loading}
+            className={`w-full p-2 rounded-md font-semibold ${loading ? "opacity-50 cursor-not-allowed" : "bg-blue-700 hover:bg-blue-800"
+              }`}
           >
-            Next
+            {loading ? "Sending..." : "Next"}
           </button>
+
         </div>
       </motion.div>
     </div>

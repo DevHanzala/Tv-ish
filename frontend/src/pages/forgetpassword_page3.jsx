@@ -3,11 +3,28 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { FaLock } from "react-icons/fa";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
 import { motion } from "framer-motion";
+import { useAuth } from "../hooks/useAuth";
+
 
 const ForgotPasswordPage3 = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email || null;
+const accessToken = location.state?.accessToken;
+
+useEffect(() => {
+  if (!accessToken) {
+    navigate("/forgetpassword_page");
+  }
+}, [accessToken, navigate]);
+
+
+
+
+
+  const { resetPassword } = useAuth();
+const [loading, setLoading] = useState(false);
+const [error, setError] = useState("");
+
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [newPassword, setNewPassword] = useState("");
@@ -44,15 +61,29 @@ const ForgotPasswordPage3 = () => {
   const allValid = Object.values(validations).every(Boolean) && newPassword === confirmPassword;
 
   // 🔐 Reset Password Handler
-  const handleReset = () => {
-    if (!allValid) {
-      alert("Please meet all password requirements and ensure passwords match.");
-      return;
-    }
+ const handleReset = async () => {
+  if (!allValid) {
+    setError("Password rules not satisfied.");
+    return;
+  }
 
-    alert("Password reset successful!");
-    navigate("/");
-  };
+  try {
+    setLoading(true);
+    setError("");
+  await resetPassword({
+  accessToken,
+  newPassword,
+});
+
+navigate("/login");
+
+  } catch (err) {
+    setError(err?.response?.data?.message || "Reset failed");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -192,6 +223,7 @@ const ForgotPasswordPage3 = () => {
               </span>
             </div>
           </div>
+          {error && <p className="text-red-500 text-sm">{error}</p>}
 
           {/* ✅ Password Validation Rules */}
           <ul className="text-sm text-gray-300 space-y-1 mt-2">
@@ -211,6 +243,7 @@ const ForgotPasswordPage3 = () => {
 
           {/* 🔘 Submit Button */}
           <button
+            disabled={loading}
             onClick={handleReset}
             className="w-full bg-blue-600 hover:bg-blue-700 transition p-3 rounded-md font-semibold"
           >

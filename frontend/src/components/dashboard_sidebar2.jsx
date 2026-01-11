@@ -19,7 +19,8 @@ import {
   FaClock,
   FaVideo,
 } from "react-icons/fa";
-import { ChannelContext } from "../context/ChannelContext";
+import { AuthContext } from "../context/AuthContext";
+
 
 const DashboardSidebar2 = ({
   showSearch = true,
@@ -28,10 +29,9 @@ const DashboardSidebar2 = ({
 }) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [notifOpen, setNotifOpen] = useState(false);
+  const {profile, logout } = useContext(AuthContext);
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
-  const toggleNotif = () => setNotifOpen(!notifOpen);
 
   // Prevent body scroll when mobile sidebar is open
   useEffect(() => {
@@ -56,8 +56,8 @@ const DashboardSidebar2 = ({
     { label: "News", icon: <FaClock />, path: "/news" },
   ];
 
-  const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
+  const handleLogout = async () => {
+    await logout();
     navigate("/login");
   };
 
@@ -95,9 +95,11 @@ const DashboardSidebar2 = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
+          profile={profile}
           onItemClick={() => setSidebarOpen(false)}
           onLogout={handleLogout}
         />
+
       </aside>
 
       {/* TOPBAR */}
@@ -151,7 +153,7 @@ const DashboardSidebar2 = ({
           {showNotifications && (
             <div
               className="relative cursor-pointer"
-              onClick={() => {}}
+              onClick={() => { }}
               aria-haspopup="true"
               title="Notifications"
             >
@@ -167,9 +169,9 @@ const DashboardSidebar2 = ({
   );
 };
 
-const SidebarContent = ({ menuItems, bottomItems, onItemClick, onLogout }) => {
+const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick, onLogout }) => {
+
   const navigate = useNavigate();
-  const { channel } = useContext(ChannelContext);
 
   return (
     <div className="flex flex-col h-full pt-16">
@@ -188,16 +190,19 @@ const SidebarContent = ({ menuItems, bottomItems, onItemClick, onLogout }) => {
       {/* PROFILE SECTION */}
       <div className="flex flex-col items-center py-6 border-b border-gray-700">
         <img
-          src={channel?.dp || "https://i.pravatar.cc/100?img=3"}
+          src={profile?.avatar_url || "https://i.pravatar.cc/100?img=3"}
           alt="Profile"
           className="w-20 h-20 rounded-full border-4 border-red-600 shadow"
         />
+
         <h2 className="text-lg font-semibold mt-2">
-          {channel?.name || "User Name"}
+          {profile?.first_name} {profile?.last_name}
         </h2>
+
         <p className="text-sm text-gray-400">
-          {channel?.description || "Web Developer"}
+          {profile?.email}
         </p>
+
       </div>
 
       {/* SCROLLABLE MENU SECTION */}
@@ -208,10 +213,9 @@ const SidebarContent = ({ menuItems, bottomItems, onItemClick, onLogout }) => {
               key={label}
               to={path}
               className={({ isActive }) =>
-                `flex items-center px-6 py-3 transition select-none ${
-                  isActive
-                    ? "bg-red-600 text-white"
-                    : "text-white hover:bg-gray-800"
+                `flex items-center px-6 py-3 transition select-none ${isActive
+                  ? "bg-red-600 text-white"
+                  : "text-white hover:bg-gray-800"
                 }`
               }
               onClick={onItemClick}
@@ -230,10 +234,9 @@ const SidebarContent = ({ menuItems, bottomItems, onItemClick, onLogout }) => {
             key={label}
             to={path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 transition select-none ${
-                isActive
-                  ? "bg-red-600 text-white"
-                  : "text-gray-400 hover:bg-gray-800 hover:text-white"
+              `flex items-center px-6 py-3 transition select-none ${isActive
+                ? "bg-red-600 text-white"
+                : "text-gray-400 hover:bg-gray-800 hover:text-white"
               }`
             }
             onClick={onItemClick}
