@@ -1,11 +1,18 @@
-import React, { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiChevronRight, FiCalendar } from "react-icons/fi";
+import { useProfile } from "../hooks/useProfile";
+
 
 const ProfileInfo = () => {
-  const [dob, setDob] = useState("1999-10-17");
   const inputRef = useRef(null);
+ // DOB is currently UI-only (not persisted yet)
+const [dob, setDob] = useState("");
   const navigate = useNavigate();
+  const { profile, loading } = useProfile();
+
+  if (loading) return null;
+
 
   const handleCalendarClick = () => {
     inputRef.current?.showPicker(); // Open native date picker
@@ -37,7 +44,10 @@ const ProfileInfo = () => {
           >
             <div>
               <p className="text-sm text-gray-400">Name</p>
-              <p className="text-base font-medium">Admin</p>
+              <p className="text-base font-medium">
+                {profile?.name || "—"}
+              </p>
+
             </div>
             <FiChevronRight className="text-gray-400 text-xl" />
           </div>

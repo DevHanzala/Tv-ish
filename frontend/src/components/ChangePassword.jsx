@@ -1,10 +1,18 @@
-import React, { useState } from "react";
+import  { useState } from "react";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import { useProfile } from "../hooks/useProfile";
+
 
 const ChangePassword = () => {
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState("");
+const [loading, setLoading] = useState(false);
+
+
+const { changePassword } = useProfile();
+
 
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
@@ -12,19 +20,38 @@ const ChangePassword = () => {
 
   const [logoutOtherDevices, setLogoutOtherDevices] = useState(true);
 
-  const handleChangePassword = () => {
-    if (newPassword !== confirmPassword) {
-      alert("New passwords do not match.");
-      return;
-    }
+ const handleChangePassword = async () => {
+  setError("");
 
-    if (newPassword.length < 6) {
-      alert("Password must be at least 6 characters.");
-      return;
-    }
+  if (!currentPassword || !newPassword) {
+    setError("All fields are required.");
+    return;
+  }
 
-    alert("Password changed successfully!");
-  };
+  if (newPassword !== confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
+
+  try {
+    setLoading(true);
+    await changePassword({
+      currentPassword,
+      newPassword,
+      logoutOthers: logoutOtherDevices,
+    });
+
+    setCurrentPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+  } catch (err) {
+    setError(err.response?.data?.message || "Password update failed.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const renderEyeIcon = (visible, toggle) => (
     <button
@@ -65,6 +92,7 @@ const ChangePassword = () => {
             />
             {renderEyeIcon(showCurrent, () => setShowCurrent(!showCurrent))}
           </div>
+          
 
           <div className="relative w-1/2">
             <input
@@ -88,13 +116,9 @@ const ChangePassword = () => {
             {renderEyeIcon(showConfirm, () => setShowConfirm(!showConfirm))}
           </div>
         </div>
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
-        {/* Forgot Password */}
-        <div className="text-xs mt-1">
-          <a href="#" className="text-blue-500 hover:underline">
-            Forgot your password?
-          </a>
-        </div>
+
 
         {/* Checkbox */}
         <label className="flex items-start mt-4 space-x-2 text-xs text-gray-300 cursor-pointer">
@@ -111,12 +135,15 @@ const ChangePassword = () => {
         </label>
 
         {/* Updated Submit Button */}
-        <button
-          onClick={handleChangePassword}
-          className="mt-10 w-full max-w-md bg-red-600 hover:bg-red-900 transition text-white font-medium py-3 rounded-full text-sm"
-        >
-          Change password
-        </button>
+   <button
+  disabled={loading}
+  onClick={handleChangePassword}
+  className="mt-10 w-full bg-red-600 py-3 rounded-full disabled:opacity-60"
+>
+  {loading ? "Updating..." : "Change password"}
+</button>
+
+
       </div>
     </div>
   );

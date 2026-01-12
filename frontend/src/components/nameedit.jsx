@@ -1,16 +1,30 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
+import { useProfile } from "../hooks/useProfile";
+
 
 const NameEdit = () => {
   const navigate = useNavigate();
-  const [name, setName] = useState("Admin");
+const { profile, updateProfile, loading } = useProfile();
+const [name, setName] = useState("");
 
-  const handleSave = () => {
-    // Normally: send updated name to backend
-    console.log("Saved name:", name);
-    navigate(-1); // go back
-  };
+if (loading) return null;
+
+useEffect(() => {
+  if (profile?.name && !name) {
+    setName(profile.name);
+  }
+}, [profile, name]);
+
+
+const handleSave = async () => {
+  if (!name.trim()) return;
+  await updateProfile({ name: name.trim() });
+  navigate(-1);
+};
+
+
 
   return (
     <div className="w-full min-h-screen bg-black text-white px-4 md:px-8 py-12">

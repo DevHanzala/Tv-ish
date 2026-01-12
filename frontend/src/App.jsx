@@ -10,6 +10,7 @@ import {
 // import { UserProvider } from "./context/UserContext";      // assuming these exist
 // import { VideoProvider } from "./context/VideoContext";    // assuming these exist
 import { AuthProvider } from "./context/AuthContext";
+import { ProfileProvider } from "./context/ProfileContext";
 import AuthGuard from "./guards/AuthGuard";
 
 // Page Components
@@ -225,6 +226,7 @@ function App() {
   return (
     <Router>
       <AuthProvider>
+        <ProfileProvider>
         <UploadProvider>     {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
           <ScrollToTop />
           <MainLayout>
@@ -305,6 +307,7 @@ function App() {
             </Routes>
           </MainLayout>
         </UploadProvider>
+        </ProfileProvider>   {/* <-- CONTEXT END */}
       </AuthProvider >   {/* <-- CONTEXT END */}
     </Router>
   );

@@ -106,6 +106,18 @@ export const AuthProvider = ({ children }) => {
     setProfile(null);
   }, []);
 
+
+
+
+  // ====================== REFRESH PROFILE =====================?
+
+  const refreshProfile = useCallback(async () => {
+  const res = await authApi.getMe();
+  setUser(res.data.user);
+  setProfile(res.data.profile);
+}, []);
+
+
   /* ===================== CONTEXT VALUE ===================== */
   return (
     <AuthContext.Provider

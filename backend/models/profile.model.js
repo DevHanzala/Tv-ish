@@ -23,3 +23,13 @@ export const createProfile = async ({
 export const getProfileByUserId = async (userId) => {
   return supabase.from("profiles").select("*").eq("id", userId).single();
 };
+
+//
+export const updateProfileByUserId = (userId, updates) => {
+  return supabase
+    .from("profiles")
+    .update(updates)
+    .eq("id", userId)
+    .select()
+    .single();
+};
