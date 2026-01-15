@@ -18,12 +18,25 @@ export const AuthProvider = ({ children }) => {
 
   /* ===================== AUTH STATE SYNC ===================== */
 useEffect(() => {
-  const { data: listener } = supabase.auth.onAuthStateChange(
-    async (event, session) => {
-      console.log("🔐 AUTH EVENT:", event);
+  if (!user) return;
 
-      // ⛔ Ignore INITIAL_SESSION
-      if (event === "INITIAL_SESSION") return;
+  const fetchProfile = async () => {
+    try {
+      const res = await authApi.getMe();
+      setProfile(res.data.data.profile || null);
+    } catch {
+      setProfile(null);
+    }
+  };
+
+  fetchProfile();
+}, [user]);
+
+
+useEffect(() => {
+  const { data: subscription } = supabase.auth.onAuthStateChange(
+    (event, session) => {
+      console.log("AUTH EVENT:", event);
 
       if (!session) {
         setUser(null);
@@ -32,36 +45,15 @@ useEffect(() => {
         return;
       }
 
-      try {
-        // ✅ FORCE session hydration
-        const {
-          data: { session: confirmedSession },
-        } = await supabase.auth.getSession();
-
-        console.log("🧾 CONFIRMED SESSION:", confirmedSession?.access_token);
-
-        if (!confirmedSession?.access_token) {
-          throw new Error("Session not ready yet");
-        }
-
-        console.log("🟡 AUTH EVENT → getMe()");
-        const res = await authApi.getMe();
-
-        const { user, profile } = res.data.data;
-        setUser(user);
-        setProfile(profile);
-      } catch (err) {
-        console.error("🔴 getMe FAILED:", err.message);
-        setUser(null);
-        setProfile(null);
-      } finally {
-        setLoading(false);
-      }
+      //  set user
+      setUser(session.user);
+      setLoading(false);
     }
   );
 
-  return () => listener.subscription.unsubscribe();
+  return () => subscription.subscription.unsubscribe();
 }, []);
+
 
   /* ===================== SIGNUP (OTP FLOW) ===================== */
   const signupSendOtp = useCallback((email, password) => {
@@ -73,7 +65,7 @@ const signupVerifyOtp = useCallback(async (payload) => {
   const res = await authApi.signupVerifyOtp(payload);
 
   const { session, user, profile } = res.data.data;
-
+  
   if (!session?.access_token || !session?.refresh_token) {
     throw new Error("Session missing after OTP verification");
   }
@@ -83,10 +75,6 @@ const signupVerifyOtp = useCallback(async (payload) => {
     access_token: session.access_token,
     refresh_token: session.refresh_token,
   });
-
-  // setUser(user);
-  // setProfile(profile);
-  // setLoading(false);
 
   return res;
 }, []);
