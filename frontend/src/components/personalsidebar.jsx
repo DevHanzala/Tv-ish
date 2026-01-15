@@ -15,7 +15,7 @@ const PersonalSidebar = () => {
 
 const handleLogout = async () => {
   await logout();   // backend + cookie cleared
-  navigate('/');
+  navigate('/login');
 };
 
   const handleAccountClick = () => {
