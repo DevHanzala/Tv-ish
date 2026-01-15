@@ -46,7 +46,7 @@ const SignupPage = () => {
       // Save draft to sessionStorage
       sessionStorage.setItem(
         "signupDraft",
-        JSON.stringify({ email, password, firstName, lastName, phone })
+        JSON.stringify({ email, password, firstName, lastName, phone , password })
       );
 
 
