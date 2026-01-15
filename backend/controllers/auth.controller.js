@@ -3,64 +3,93 @@ import {asyncHandler} from "../utils/asyncHandler.js";
 import { success, error } from "../utils/apiResponse.js";
 
 /* ======================================================
-   SIGNUP – SEND OTP
+   SIGNUP / LOGIN – SEND OTP (RELIABLE)
 ====================================================== */
 export const signupSendOtp = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
-console.log("SIGNUP SEND OTP REQUEST FOR:", email);
+  const { email } = req.body;
 
-  if (!email || !password) {
-    return error(res, "Email and password are required");
+  console.log("SIGNUP OTP REQUEST FOR:", email);
+
+  if (!email) {
+    return error(res, "Email is required");
   }
 
-  const { error: signUpError } = await supabase.auth.signUp({
+  const { data, error: otpError } = await supabase.auth.signInWithOtp({
     email,
-    password,
+    options: {
+      shouldCreateUser: true, // creates user if not exists
+    },
   });
 
-  if (signUpError) {
-    return error(res, signUpError.message);
+  if (otpError) {
+    console.error("SUPABASE OTP ERROR:", otpError);
+    return error(res, otpError.message);
   }
 
-  return success(res, "OTP sent successfully");
+  return success(res, "OTP sent successfully to email");
 });
 
 /* ======================================================
-   SIGNUP – VERIFY OTP
+   SIGNUP – VERIFY OTP + SET PASSWORD
 ====================================================== */
 export const signupVerifyOtp = asyncHandler(async (req, res) => {
-  const { email, token, firstName, lastName, phone } = req.body;
+  const { email, token, password, firstName, lastName, phone } = req.body;
+
   console.log("SIGNUP VERIFY OTP REQUEST FOR:", email);
+
+  if (!email || !token || !password) {
+    return error(res, "Email, OTP, and password are required");
+  }
+
+  // Verify OTP (authenticates user)
   const { data, error: verifyError } = await supabase.auth.verifyOtp({
     email,
     token,
     type: "email",
   });
 
-  if (verifyError) return error(res, verifyError.message);
+  if (verifyError) {
+    return error(res, verifyError.message);
+  }
+
+  if (!data?.session || !data?.user) {
+    return error(res, "OTP verification failed");
+  }
+
+  // Set password (now user is authenticated)
+  const { error: passwordError } = await supabase.auth.updateUser({
+    password,
+  });
+
+  if (passwordError) {
+    return error(res, passwordError.message);
+  }
 
   const userId = data.user.id;
 
-  await supabase.from("profiles").upsert(
+  // Create / update profile
+  const { error: profileError } = await supabase.from("profiles").upsert(
     {
       user_id: userId,
       email,
-      first_name: firstName,
-      last_name: lastName,
+      first_name: firstName || null,
+      last_name: lastName || null,
       phone: phone || null,
     },
     { onConflict: "user_id" }
   );
-console.log("VERIFY OTP:", email, token);
-console.log("SESSION:", data.session);
 
-console.log("USER PROFILE CREATED/UPDATED FOR:", userId);
-  // ✅ THIS IS MANDATORY
+  if (profileError) {
+    return error(res, "Profile creation failed");
+  }
+
   return success(res, "Signup completed", {
     user: data.user,
     session: data.session,
+    profile:{ user_id: userId, email, first_name: firstName || null, last_name: lastName || null, phone: phone || null}
   });
 });
+
 
 
 /* ======================================================
