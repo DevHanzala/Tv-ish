@@ -101,6 +101,7 @@ const verifyCode = async () => {
       firstName,
       lastName,
       phone,
+      password
     });
     console.log("✅ OTP verified successfully for:", email);
 
