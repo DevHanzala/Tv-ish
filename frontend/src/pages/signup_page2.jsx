@@ -2,17 +2,18 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
+// import { supabase } from "../config/supabase";
 
 
 const SignupPage2 = () => {
   const navigate = useNavigate();
- const { signupVerifyOtp, signupSendOtp } = useAuth();
+  const { signupVerifyOtp, signupSendOtp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [code, setCode] = useState(["", "", "", "", "", ""]);
-const draft = JSON.parse(sessionStorage.getItem("signupDraft"));
-const { email, password, firstName, lastName } = draft || {};
+  const draft = JSON.parse(sessionStorage.getItem("signupDraft"));
+  const { email, password, firstName, lastName, phone } = draft || {};
 
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -37,7 +38,7 @@ const { email, password, firstName, lastName } = draft || {};
   const imagesToShow = isMobile ? [] : images.slice(0, 10);
 
 
-  
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
@@ -59,16 +60,16 @@ const { email, password, firstName, lastName } = draft || {};
     }
   };
 
- const handleResend = async () => {
-  try {
-    setLoading(true);
-    await signupSendOtp(email, password);
-  } catch {
-    setError("Failed to resend OTP");
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleResend = async () => {
+    try {
+      setLoading(true);
+      await signupSendOtp(email, password);
+    } catch {
+      setError("Failed to resend OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -84,6 +85,7 @@ const { email, password, firstName, lastName } = draft || {};
   };
 const verifyCode = async () => {
   const otp = code.join("");
+
   if (otp.length !== 6) {
     setError("Please enter the complete 6-digit code.");
     return;
@@ -98,9 +100,15 @@ const verifyCode = async () => {
       token: otp,
       firstName,
       lastName,
+      phone,
     });
+    console.log("✅ OTP verified successfully for:", email);
 
-    navigate("/dashboard");
+    // Clear draft from sessionStorage    
+    sessionStorage.removeItem("signupDraft");
+    setTimeout(() => {
+  navigate("/dashboard", { replace: true });
+}, 0);
   } catch (err) {
     setError(err?.response?.data?.message || "OTP verification failed");
   } finally {

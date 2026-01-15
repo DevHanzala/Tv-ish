@@ -1,21 +1,69 @@
 import { getProfileByUserId, updateProfileByUserId } from "../models/profile.model.js";
 import { success, error } from "../utils/apiResponse.js";
+import { supabaseAdmin, supabase } from "../config/supabaseClient.js";
 
 export const getMyProfile = async (req, res) => {
-  const userId = req.user.id;
+  const user = req.user;
+  console.log("👤 REQ.USER:", user);
 
-  const { data, error: profileError } =
-    await getProfileByUserId(userId);
+  if (!user) {
+    return error(res, "Unauthorized", 401);
+  }
 
-  if (profileError) return error(res, profileError.message);
+  const userId = user.id;
 
-  return success(res, "Profile fetched", data);
+  let { data: profile, error: profileError } =
+    await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("user_id", userId)
+      .single();
+  console.log("🔍 PROFILE LOOKUP user_id:", userId);
+
+  if (!profile) {
+    console.log("➕ CREATING PROFILE FOR:", userId);
+
+    const { data: newProfile, error: createError } =
+      await supabaseAdmin
+        .from("profiles")
+        .insert({
+          user_id: userId,
+          email: user.email,
+        })
+        .select()
+        .single();
+
+
+
+
+    if (createError) {
+      console.error("❌ PROFILE CREATE FAILED:", createError);
+      return error(res, createError.message);
+    }
+
+    profile = newProfile;
+  } else {
+    console.log("✅ PROFILE FOUND:", profile.user_id);
+    console.log("📦 getMe RESPONSE DATA:", {
+      user,
+      profile
+    });
+  }
+
+  console.log("📦 getMe RESPONSE DATA:", { user, profile });
+
+  return success(res, "Profile fetched", {
+    user,
+    profile,
+  });
+
 };
+
 
 
 export const updateMyProfile = async (req, res) => {
   const userId = req.user.id;
-  const payload = req.body; // { first_name?, last_name?, dob?, phone? }
+  const payload = req.body;
 
   const { data, error: updateError } =
     await updateProfileByUserId(userId, payload);

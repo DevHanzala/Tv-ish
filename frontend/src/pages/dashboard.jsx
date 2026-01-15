@@ -1,10 +1,32 @@
-import React from "react";
+import {useNavigate} from "react-router-dom";
 import WatchedVideos from "../components/WatchedVideos";
 import AnalyticsGraph from "../components/AnalyticsGraph";
 import Sidebar from "../components/Sidebar";
 import PlaylistSection from "../components/PlaylistSection";
+import { useState, useEffect } from "react";
+import { supabase } from "../config/supabase.js";
 
 const Dashboard = () => {
+
+ const navigate = useNavigate();
+  const [checkingAuth, setCheckingAuth] = useState(true);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      console.log("🧾 CURRENT SESSION", data.session);
+
+      if (!data.session) {
+        console.log("❌ NO SESSION → REDIRECT TO LOGIN");
+        navigate("/login", { replace: true });
+      }
+
+      setCheckingAuth(false);
+    });
+  }, [navigate]);
+
+  if (checkingAuth) {
+    return <div className="text-white p-6">Checking authentication…</div>;
+  }
   // Video data with ads revenue & other revenue
   const videoData = [
     {

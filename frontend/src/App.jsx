@@ -224,10 +224,11 @@ const MainLayout = ({ children }) => {
 // ✅ App Component
 function App() {
   return (
-    <Router>
+    
       <AuthProvider>
         <ProfileProvider>
-        <UploadProvider>     {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
+        <UploadProvider>   
+          <Router>  {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
           <ScrollToTop />
           <MainLayout>
             <Routes>
@@ -306,10 +307,10 @@ function App() {
 
             </Routes>
           </MainLayout>
+          </Router>
         </UploadProvider>
-        </ProfileProvider>   {/* <-- CONTEXT END */}
-      </AuthProvider >   {/* <-- CONTEXT END */}
-    </Router>
+        </ProfileProvider>  
+      </AuthProvider >   
   );
 }
 

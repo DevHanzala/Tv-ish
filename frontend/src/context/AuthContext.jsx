@@ -15,62 +15,92 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);  // profile / channel data
   const [loading, setLoading] = useState(true);
 
-  /* ===================== BOOTSTRAP SESSION ===================== */
-  useEffect(() => {
-    (async () => {
+
+  /* ===================== AUTH STATE SYNC ===================== */
+useEffect(() => {
+  const { data: listener } = supabase.auth.onAuthStateChange(
+    async (event, session) => {
+      console.log("🔐 AUTH EVENT:", event);
+
+      // ⛔ Ignore INITIAL_SESSION
+      if (event === "INITIAL_SESSION") return;
+
+      if (!session) {
+        setUser(null);
+        setProfile(null);
+        setLoading(false);
+        return;
+      }
+
       try {
+        // ✅ FORCE session hydration
+        const {
+          data: { session: confirmedSession },
+        } = await supabase.auth.getSession();
+
+        console.log("🧾 CONFIRMED SESSION:", confirmedSession?.access_token);
+
+        if (!confirmedSession?.access_token) {
+          throw new Error("Session not ready yet");
+        }
+
+        console.log("🟡 AUTH EVENT → getMe()");
         const res = await authApi.getMe();
-        setUser(res.data.user);
-        setProfile(res.data.profile);
-      } catch {
+
+        const { user, profile } = res.data.data;
+        setUser(user);
+        setProfile(profile);
+      } catch (err) {
+        console.error("🔴 getMe FAILED:", err.message);
         setUser(null);
         setProfile(null);
       } finally {
         setLoading(false);
       }
-    })();
-  }, []);
+    }
+  );
 
-  /* ===================== AUTH STATE SYNC ===================== */
-  useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session) {
-          try {
-            const res = await authApi.getMe();
-            setUser(res.data.user);
-            setProfile(res.data.profile);
-          } catch {
-            setUser(null);
-            setProfile(null);
-          }
-        } else {
-          setUser(null);
-          setProfile(null);
-        }
-      }
-    );
-
-    return () => listener.subscription.unsubscribe();
-  }, []);
+  return () => listener.subscription.unsubscribe();
+}, []);
 
   /* ===================== SIGNUP (OTP FLOW) ===================== */
   const signupSendOtp = useCallback((email, password) => {
+    console.log("SEND OTP TO:", email);
     return authApi.signupSendOtp({ email, password });
   }, []);
 
-  const signupVerifyOtp = useCallback(async (payload) => {
-    const res = await authApi.signupVerifyOtp(payload);
-    setUser(res.data.user);
-    setProfile(res.data.profile);
-    return res;
-  }, []);
+const signupVerifyOtp = useCallback(async (payload) => {
+  const res = await authApi.signupVerifyOtp(payload);
+
+  const { session, user, profile } = res.data.data;
+
+  if (!session?.access_token || !session?.refresh_token) {
+    throw new Error("Session missing after OTP verification");
+  }
+
+  // 🔑 CRITICAL
+  await supabase.auth.setSession({
+    access_token: session.access_token,
+    refresh_token: session.refresh_token,
+  });
+
+  // setUser(user);
+  // setProfile(profile);
+  // setLoading(false);
+
+  return res;
+}, []);
+
 
   /* ===================== LOGIN ===================== */
   const login = useCallback(async (payload) => {
     const res = await authApi.login(payload);
-    setUser(res.data.user);
-    setProfile(res.data.profile);
+    const { user, profile } = res.data.data;
+
+setUser(user);
+setProfile(profile);
+    setLoading(false);
+    console.log("🧩 PARSED USER:", user);
     return res;
   }, []);
 
@@ -112,10 +142,15 @@ export const AuthProvider = ({ children }) => {
   // ====================== REFRESH PROFILE =====================?
 
   const refreshProfile = useCallback(async () => {
-  const res = await authApi.getMe();
-  setUser(res.data.user);
-  setProfile(res.data.profile);
-}, []);
+    const res = await authApi.getMe();
+ const { user, profile } = res.data.data;
+
+setUser(user);
+setProfile(profile);
+
+    setLoading(false);
+    console.log("🧩 PARSED USER:", user);
+  }, []);
 
 
   /* ===================== CONTEXT VALUE ===================== */

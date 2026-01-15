@@ -8,6 +8,11 @@ if (!supabaseUrl || !serviceRoleKey) {
   process.exit(1);
 }
 
+
+//  This client is used for:
+// | - Auth admin operations (create/update users, reset passwords, sign out)
+// | - Stateless backend requests
+
 export const supabase = createClient(
   supabaseUrl,
   serviceRoleKey,
@@ -18,5 +23,15 @@ export const supabase = createClient(
     }
   }
 );
+
+
+//  It uses the same service role key but is logically separated
+// | to enforce clear responsibility boundaries in the codebase.
+
+export const supabaseAdmin = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
+
 
 console.log("✅ Supabase client initialized (service role)");

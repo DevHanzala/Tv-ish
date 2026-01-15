@@ -1,34 +1,36 @@
-import { supabase } from "../config/supabaseClient.js";
+import {supabase} from "../config/supabaseClient.js";
+import {asyncHandler} from "../utils/asyncHandler.js";
 import { success, error } from "../utils/apiResponse.js";
-import { createProfile } from "../models/profile.model.js";
 
-/**
- * STEP 1: Signup (send OTP)
- * Called from SignupPage
- */
-export const signupSendOtp = async (req, res) => {
+/* ======================================================
+   SIGNUP – SEND OTP
+====================================================== */
+export const signupSendOtp = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+console.log("SIGNUP SEND OTP REQUEST FOR:", email);
 
-  const { error: otpError } = await supabase.auth.signUp({
+  if (!email || !password) {
+    return error(res, "Email and password are required");
+  }
+
+  const { error: signUpError } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      emailRedirectTo: null, // OTP only
-    },
   });
 
-  if (otpError) return error(res, otpError.message);
+  if (signUpError) {
+    return error(res, signUpError.message);
+  }
 
-  return success(res, "OTP sent to email");
-};
+  return success(res, "OTP sent successfully");
+});
 
-/**
- * STEP 2: Verify OTP & create profile
- * Called from SignupPage2
- */
-export const signupVerifyOtp = async (req, res) => {
-  const { email, token, firstName, lastName } = req.body;
-
+/* ======================================================
+   SIGNUP – VERIFY OTP
+====================================================== */
+export const signupVerifyOtp = asyncHandler(async (req, res) => {
+  const { email, token, firstName, lastName, phone } = req.body;
+  console.log("SIGNUP VERIFY OTP REQUEST FOR:", email);
   const { data, error: verifyError } = await supabase.auth.verifyOtp({
     email,
     token,
@@ -37,22 +39,39 @@ export const signupVerifyOtp = async (req, res) => {
 
   if (verifyError) return error(res, verifyError.message);
 
-  await createProfile({
-    userId: data.user.id,
-    email,
-    firstName,
-    lastName,
+  const userId = data.user.id;
+
+  await supabase.from("profiles").upsert(
+    {
+      user_id: userId,
+      email,
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone || null,
+    },
+    { onConflict: "user_id" }
+  );
+console.log("VERIFY OTP:", email, token);
+console.log("SESSION:", data.session);
+
+console.log("USER PROFILE CREATED/UPDATED FOR:", userId);
+  // ✅ THIS IS MANDATORY
+  return success(res, "Signup completed", {
+    user: data.user,
+    session: data.session,
   });
+});
 
-  return success(res, "Signup completed", { user: data.user });
-};
 
-/**
- * Login with email & password
- * Called from LoginPage
- */
-export const login = async (req, res) => {
+/* ======================================================
+   LOGIN
+====================================================== */
+export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+
+  if (!email || !password) {
+    return error(res, "Email and password are required");
+  }
 
   const { data, error: loginError } =
     await supabase.auth.signInWithPassword({
@@ -60,59 +79,78 @@ export const login = async (req, res) => {
       password,
     });
 
-  if (loginError) return error(res, loginError.message);
+  if (loginError) {
+    return error(res, loginError.message);
+  }
 
-  return success(res, "Login successful", data);
-};
+  return success(res, "Login successful", {
+    user: data.user,
+    session: data.session,
+  });
+});
 
-/**
- * Forgot password - send OTP
- * Called from ForgotPasswordPage
- */
-export const forgotPasswordSendOtp = async (req, res) => {
+/* ======================================================
+   FORGOT PASSWORD – SEND OTP
+====================================================== */
+export const forgotPasswordSendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
+
+  if (!email) {
+    return error(res, "Email is required");
+  }
 
   const { error: resetError } =
     await supabase.auth.resetPasswordForEmail(email);
 
-  if (resetError) return error(res, resetError.message);
+  if (resetError) {
+    return error(res, resetError.message);
+  }
 
-  return success(res, "OTP sent for password reset");
-};
+  return success(res, "Password reset OTP sent");
+});
 
-/**
- * Verify OTP for password reset
- * Called from ForgotPasswordPage2
- */
-export const forgotPasswordVerifyOtp = async (req, res) => {
+/* ======================================================
+   FORGOT PASSWORD – VERIFY OTP
+====================================================== */
+export const forgotPasswordVerifyOtp = asyncHandler(async (req, res) => {
   const { email, token } = req.body;
 
-  const { data, error } = await supabase.auth.verifyOtp({
+  if (!email || !token) {
+    return error(res, "Email and OTP are required");
+  }
+
+  const { data, error: verifyError } = await supabase.auth.verifyOtp({
     email,
     token,
     type: "recovery",
   });
 
-  if (error) return error(res, error.message);
+  if (verifyError) {
+    return error(res, verifyError.message);
+  }
 
   return success(res, "OTP verified", {
-    accessToken: data.session.access_token,
+    user: data.user,
   });
-};
+});
 
-/**
- * Reset password
- * Called from ForgotPasswordPage3
- */
-export const resetPassword = async (req, res) => {
-  const { accessToken, newPassword } = req.body;
+/* ======================================================
+   RESET PASSWORD
+====================================================== */
+export const resetPassword = asyncHandler(async (req, res) => {
+  const { newPassword } = req.body;
 
-  const { error: updateError } = await supabase.auth.updateUser(
-    { password: newPassword },
-    { accessToken }
-  );
+  if (!newPassword) {
+    return error(res, "New password is required");
+  }
 
-  if (updateError) return error(res, updateError.message);
+  const { error: updateError } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
 
-  return success(res, "Password reset successful");
-};
+  if (updateError) {
+    return error(res, updateError.message);
+  }
+
+  return success(res, "Password updated successfully");
+});

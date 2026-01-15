@@ -28,30 +28,35 @@ const SignupPage = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-const handleContinue = async () => {
-  if (!firstName || !lastName || !email || !password) {
-    setError("Please fill in all required fields.");
-    return;
-  }
+  const handleContinue = async () => {
+    console.log("🚀 Signup attempt with:", { firstName, lastName, email, phone, password });
+    if (!firstName || !lastName || !email || !password) {
+      setError("Please fill in all required fields.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setError("");
 
-    await signupSendOtp(email, password);
+    try {
+      setLoading(true);
+      setError("");
 
-    sessionStorage.setItem(
-      "signupDraft",
-      JSON.stringify({ email, password, firstName, lastName })
-    );
+      await signupSendOtp(email, password);
+      console.log("✅ OTP sent successfully to:", email);
 
-    navigate("/signup_page2"); // ✅ ONLY THIS NAVIGATION
-  } catch (err) {
-    setError(err?.response?.data?.message || "Failed to send OTP");
-  } finally {
-    setLoading(false);
-  }
-};
+      // Save draft to sessionStorage
+      sessionStorage.setItem(
+        "signupDraft",
+        JSON.stringify({ email, password, firstName, lastName, phone })
+      );
+
+
+      navigate("/signup_page2"); // ✅ ONLY THIS NAVIGATION
+    } catch (err) {
+      setError(err?.response?.data?.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
