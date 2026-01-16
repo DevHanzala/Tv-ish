@@ -12,27 +12,31 @@ import { useAuth } from "../hooks/useAuth";
 
 
 const LoginPage = () => {
+
+  // State variables
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [email, setEmail] = useState("");      // We'll treat this as the "user id"
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-
-  const { login, socialLogin } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [rememberMe, setRememberMe] = useState(true);
 
+  // Auth context
+  const { login, socialLogin } = useAuth();
 
-
+// 🔁 Listen for screen resize
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // 🎞️ Posters array
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
 
+  // 👉 Handle Login
   const handleLogin = async () => {
     if (!email || !password) {
       setError("Please enter both email and password.");

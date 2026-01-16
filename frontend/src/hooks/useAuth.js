@@ -1,6 +1,8 @@
 import { useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 
+
+// ==============================Custom Hook for Authentication ============================== //
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
 

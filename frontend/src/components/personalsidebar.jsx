@@ -1,12 +1,12 @@
 import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../hooks/useAuth';
 
 
 const PersonalSidebar = () => {
   const navigate = useNavigate();
 
-  const { user, profile, logout } = useContext(AuthContext);
+  const { user, profile, logout } = useAuth();
 
 
   const handleLogin = () => {

@@ -17,8 +17,8 @@ import {
   FaTimes,
   FaChartBar,
 } from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
 
+import { useAuth } from "../hooks/useAuth";
 import Notification from "./notification";
 
 const DashboardSidebar = ({
@@ -30,7 +30,7 @@ const DashboardSidebar = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
-  const {  profile, logout } = useContext(AuthContext);
+  const {  profile, logout } = useAuth();
 
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);

@@ -19,8 +19,7 @@ import {
   FaClock,
   FaVideo,
 } from "react-icons/fa";
-import { AuthContext } from "../context/AuthContext";
-
+import { useAuth } from "../hooks/useAuth";
 
 const DashboardSidebar2 = ({
   showSearch = true,
@@ -29,7 +28,7 @@ const DashboardSidebar2 = ({
 }) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const {profile, logout } = useContext(AuthContext);
+  const {profile, logout } = useAuth();
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 

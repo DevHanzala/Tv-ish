@@ -17,6 +17,8 @@ export const AuthProvider = ({ children }) => {
 
 
   /* ===================== AUTH STATE SYNC ===================== */
+
+// Fetch profile when user changes  
 useEffect(() => {
   if (!user) return;
 
@@ -33,6 +35,7 @@ useEffect(() => {
 }, [user]);
 
 
+// Listen to auth state changes
 useEffect(() => {
   const { data: subscription } = supabase.auth.onAuthStateChange(
     (event, session) => {
@@ -56,11 +59,14 @@ useEffect(() => {
 
 
   /* ===================== SIGNUP (OTP FLOW) ===================== */
+
+  // Send OTP
   const signupSendOtp = useCallback((email, password) => {
     console.log("SEND OTP TO:", email);
     return authApi.signupSendOtp({ email, password });
   }, []);
 
+ // Verify OTP + set password 
 const signupVerifyOtp = useCallback(async (payload) => {
   const res = await authApi.signupVerifyOtp(payload);
 
@@ -115,14 +121,18 @@ const signupVerifyOtp = useCallback(async (payload) => {
   }, []);
 
   /* ===================== FORGOT / RESET PASSWORD ===================== */
+
+  // Send OTP
   const forgotPasswordSendOtp = useCallback((email) => {
     return authApi.forgotPasswordSendOtp(email);
   }, []);
 
+  // Verify OTP
   const forgotPasswordVerifyOtp = useCallback((payload) => {
     return authApi.forgotPasswordVerifyOtp(payload);
   }, []);
 
+  // Reset Password
   const resetPassword = useCallback((payload) => {
     return authApi.resetPassword(payload);
   }, []);

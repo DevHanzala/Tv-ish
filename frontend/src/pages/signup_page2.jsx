@@ -2,53 +2,60 @@ import React, { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { useAuth } from "../hooks/useAuth";
-// import { supabase } from "../config/supabase";
 
 
 const SignupPage2 = () => {
+
+  // Page state variables
   const navigate = useNavigate();
-  const { signupVerifyOtp, signupSendOtp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const draft = JSON.parse(sessionStorage.getItem("signupDraft"));
   const { email, password, firstName, lastName, phone } = draft || {};
 
+  // Auth context
+  const { signupVerifyOtp, signupSendOtp } = useAuth();
 
+  // 🔁 Listen for screen resize
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
+  // Redirect if no draft
   useEffect(() => {
     if (!draft) navigate("/signup_page");
   }, []);
 
-
+// Screen resize listener
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Focus first input on mount
   useEffect(() => {
     const firstInput = document.getElementById("code-0");
     if (firstInput) firstInput.focus();
   }, []);
 
+  // 🎞️ Posters array
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
   const imagesToShow = isMobile ? [] : images.slice(0, 10);
 
 
-
+// 🎭 Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
+  // 🎭 Image animation variants
   const imageVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
 
+  // 👉 Handle input change
   const handleChange = (element, index) => {
     if (!/^\d*$/.test(element.value)) return;
     const newCode = [...code];
@@ -60,6 +67,7 @@ const SignupPage2 = () => {
     }
   };
 
+  // 👉 Handle Resend Code
   const handleResend = async () => {
     try {
       setLoading(true);
@@ -71,9 +79,7 @@ const SignupPage2 = () => {
     }
   };
 
-
-
-
+// 👉 Handle Paste
   const handlePaste = (event) => {
     event.preventDefault();
     const pasteData = event.clipboardData.getData("text").slice(0, 6);
@@ -83,6 +89,8 @@ const SignupPage2 = () => {
       if (lastInput) lastInput.focus();
     }
   };
+
+ // 👉 Verify Code 
 const verifyCode = async () => {
   const otp = code.join("");
 

@@ -6,11 +6,11 @@ import { useAuth } from "../hooks/useAuth";
 
 
 const SignupPage = () => {
+
+  // State variables
   const [showPassword, setShowPassword] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const navigate = useNavigate();
-
-  const { signupSendOtp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -22,20 +22,24 @@ const SignupPage = () => {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
 
+  // Auth context
+  const { signupSendOtp } = useAuth();
+
+
+  // 🔁 Listen for screen resize
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // 👉 Handle "Continue" button click
   const handleContinue = async () => {
     console.log("🚀 Signup attempt with:", { firstName, lastName, email, phone, password });
     if (!firstName || !lastName || !email || !password) {
       setError("Please fill in all required fields.");
       return;
     }
-
-
     try {
       setLoading(true);
       setError("");
@@ -48,8 +52,6 @@ const SignupPage = () => {
         "signupDraft",
         JSON.stringify({ email, password, firstName, lastName, phone })
       );
-
-
       navigate("/signup_page2"); // ✅ ONLY THIS NAVIGATION
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to send OTP");
@@ -58,15 +60,17 @@ const SignupPage = () => {
     }
   };
 
-
+// 🎨 Posters array
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
   const imagesToShow = isMobile ? [] : images.slice(0, 10); // Posters hidden on mobile
 
+  // 🎭 Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } },
   };
 
+  // 🎭 Image animation variants
   const imageVariants = {
     hidden: { opacity: 0, y: 30 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
