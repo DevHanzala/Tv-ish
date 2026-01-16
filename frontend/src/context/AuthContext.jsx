@@ -120,6 +120,7 @@ setProfile(profile);
   /* ===================== LOGOUT ===================== */
   const logout = useCallback(async () => {
     await authApi.logout();
+    await supabase.auth.signOut();
     setUser(null);
     setProfile(null);
   }, []);
