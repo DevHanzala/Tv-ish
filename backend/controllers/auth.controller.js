@@ -2,32 +2,41 @@ import {supabase} from "../config/supabaseClient.js";
 import {asyncHandler} from "../utils/asyncHandler.js";
 import { success, error } from "../utils/apiResponse.js";
 
-/* ======================================================
-   SIGNUP / LOGIN – SEND OTP (RELIABLE)
-====================================================== */
 export const signupSendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
-  console.log("SIGNUP OTP REQUEST FOR:", email);
-
+  // return error if email is missing
   if (!email) {
     return error(res, "Email is required");
   }
 
-  const { data, error: otpError } = await supabase.auth.signInWithOtp({
+  // check if email already exists
+  const { data: existingProfile } = await supabase
+    .from("profiles")
+    .select("user_id")
+    .eq("email", email)
+    .single();
+
+  if (existingProfile) {
+    return error(res, "Email already registered. Please login.");
+  }
+
+  // Send OTP for signup
+  const { error: otpError } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: true, // creates user if not exists
+      shouldCreateUser: true,
     },
   });
 
+  // return error if otp sending fails
   if (otpError) {
-    console.error("SUPABASE OTP ERROR:", otpError);
     return error(res, otpError.message);
   }
 
-  return success(res, "OTP sent successfully to email");
+  return success(res, "OTP sent successfully");
 });
+
 
 /* ======================================================
    SIGNUP – VERIFY OTP + SET PASSWORD
@@ -37,8 +46,9 @@ export const signupVerifyOtp = asyncHandler(async (req, res) => {
 
   console.log("SIGNUP VERIFY OTP REQUEST FOR:", email);
 
-  if (!email || !token || !password) {
-    return error(res, "Email, OTP, and password are required");
+  // Validate input
+  if (!email || !token || !password || !firstName || !lastName || !phone) {
+    return error(res, "FirstName, LastName, Email, Phone, OTP, and password are required");
   }
 
   // Verify OTP (authenticates user)
@@ -48,10 +58,12 @@ export const signupVerifyOtp = asyncHandler(async (req, res) => {
     type: "email",
   });
 
+  // Handle verification errors
   if (verifyError) {
     return error(res, verifyError.message);
   }
 
+  // Ensure user and session are returned
   if (!data?.session || !data?.user) {
     return error(res, "OTP verification failed");
   }
@@ -61,6 +73,7 @@ export const signupVerifyOtp = asyncHandler(async (req, res) => {
     password,
   });
 
+  // Handle password setting errors
   if (passwordError) {
     return error(res, passwordError.message);
   }
@@ -72,9 +85,9 @@ export const signupVerifyOtp = asyncHandler(async (req, res) => {
     {
       user_id: userId,
       email,
-      first_name: firstName || null,
-      last_name: lastName || null,
-      phone: phone || null,
+      first_name: firstName,
+      last_name: lastName,
+      phone: phone,
     },
     { onConflict: "user_id" }
   );
@@ -86,10 +99,9 @@ export const signupVerifyOtp = asyncHandler(async (req, res) => {
   return success(res, "Signup completed", {
     user: data.user,
     session: data.session,
-    profile:{ user_id: userId, email, first_name: firstName || null, last_name: lastName || null, phone: phone || null}
+    profile:{ user_id: userId, email, first_name: firstName , last_name: lastName, phone: phone}
   });
 });
-
 
 
 /* ======================================================
