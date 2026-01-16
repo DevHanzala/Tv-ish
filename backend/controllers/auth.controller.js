@@ -183,23 +183,3 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   return success(res, "Password updated successfully");
 });
-
-/* ======================================================
-   LOGOUT
-====================================================== */
-export const logout = asyncHandler(async (req, res) => {
-  const token = req.headers.authorization?.replace("Bearer ", "");
-  
-  if (!token) {
-    return error(res, "No token provided");
-  }
-
-  const { error: signOutError } =
-    await supabase.auth.admin.signOut(token);
-
-  if (signOutError) {
-    return error(res, signOutError.message);
-  }
-
-  return success(res, "Refresh tokens revoked");
-});
