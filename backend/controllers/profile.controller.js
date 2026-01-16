@@ -4,6 +4,27 @@ import { supabaseAdmin, supabase } from "../config/supabaseClient.js";
 
 export const getMyProfile = async (req, res) => {
   const user = req.user;
+
+  // Extract name from OAuth metadata (safe)
+  const metadata = user.user_metadata || {};
+
+  let firstName = null;
+  let lastName = null;
+
+  // Prefer explicit fields
+  if (metadata.given_name || metadata.family_name) {
+    firstName = metadata.given_name || null;
+    lastName = metadata.family_name || null;
+  }
+
+  // Fallback: split full name
+  if (!firstName && metadata.full_name) {
+    const parts = metadata.full_name.trim().split(" ");
+    firstName = parts[0] || null;
+    lastName = parts.length > 1 ? parts.slice(1).join(" ") : null;
+  }
+
+
   console.log("👤 REQ.USER:", user);
 
   if (!user) {
@@ -29,12 +50,11 @@ export const getMyProfile = async (req, res) => {
         .insert({
           user_id: userId,
           email: user.email,
+          first_name: firstName,
+          last_name: lastName,
         })
         .select()
         .single();
-
-
-
 
     if (createError) {
       console.error("❌ PROFILE CREATE FAILED:", createError);
@@ -49,6 +69,21 @@ export const getMyProfile = async (req, res) => {
       profile
     });
   }
+
+  // Patch missing names for social users (do NOT overwrite)
+  if (!profile.first_name && firstName) {
+    await supabaseAdmin
+      .from("profiles")
+      .update({
+        first_name: firstName,
+        last_name: profile.last_name || lastName,
+      })
+      .eq("user_id", userId);
+
+    profile.first_name = firstName;
+    profile.last_name = profile.last_name || lastName;
+  }
+
 
   console.log("📦 getMe RESPONSE DATA:", { user, profile });
 
