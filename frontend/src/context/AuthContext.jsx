@@ -82,15 +82,25 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   /* ===================== LOGIN ===================== */
   const login = useCallback(async (payload) => {
-    const res = await authApi.login(payload);
-    const { user, profile } = res.data.data;
+  const res = await authApi.login(payload);
+  const { user, session, profile } = res.data.data;
 
-setUser(user);
-setProfile(profile);
-    setLoading(false);
-    console.log("🧩 PARSED USER:", user);
-    return res;
-  }, []);
+  if (session?.access_token && session?.refresh_token) {
+    // Set the session in the frontend Supabase client
+    await supabase.auth.setSession({
+      access_token: session.access_token,
+      refresh_token: session.refresh_token,
+    });
+  }
+
+  // Update state
+  setUser(user);
+  setProfile(profile || null);
+  setLoading(false);
+  console.log("🧩 PARSED USER:", user);
+  return res;
+}, []);
+
 
   /* ===================== SOCIAL LOGIN ===================== */
   const socialLogin = useCallback(async (provider) => {
