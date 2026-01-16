@@ -15,28 +15,28 @@ api.interceptors.response.use(
   (res) => res,
   (err) => Promise.reject(err)
 );
+
 api.interceptors.request.use(async (config) => {
-  if (config.url?.startsWith("/auth")) {
+  const publicRoutes = [
+    "/auth/login",
+    "/auth/signup",
+    "/auth/send-otp",
+    "/auth/verify-otp",
+  ];
+
+  if (publicRoutes.some((route) => config.url?.startsWith(route))) {
     return config;
   }
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-  console.log(
-    "🔑 AXIOS TOKEN:",
-    session?.access_token ? "FOUND" : "MISSING",
-    config.url
-  );
-
-  if (session?.access_token) {
-    config.headers.Authorization = `Bearer ${session.access_token}`;
+  if (!session?.access_token) {
+    throw new Error("Missing access token");
   }
 
+  config.headers.Authorization = `Bearer ${session.access_token}`;
   return config;
 });
-
 
 
 export default api;
