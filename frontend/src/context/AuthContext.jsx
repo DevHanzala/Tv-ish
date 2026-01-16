@@ -129,12 +129,10 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   /* ===================== LOGOUT ===================== */
   const logout = useCallback(async () => {
-    await authApi.logout();
-    await supabase.auth.signOut();
+    await supabase.auth.signOut(); 
     setUser(null);
-    setProfile(null);
+    setProfile(null); 
   }, []);
-
 
 
 
