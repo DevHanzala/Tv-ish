@@ -1,9 +1,9 @@
 import express from "express";
 import "dotenv/config";
 import { corsConfig } from "./config/cors.js";
-
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
+import globalErrorHandler from "./exception/globalErrorHandler.js"
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -22,14 +22,7 @@ app.get("/health", (req, res) => {
 });
 
 // Global Exception handler
-app.use((err, req, res, next) => {
-  console.error("ERROR: ", err);
-
-  res.status(err.status || 500).json({
-    success: false,
-    message: err.message || "Internal Server Error",
-  });
-});
+app.use(globalErrorHandler);
 
 // Server startup
 app.listen(PORT, async () => {
