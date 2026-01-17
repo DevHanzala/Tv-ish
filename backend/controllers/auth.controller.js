@@ -1,5 +1,5 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { success, error } from "../utils/apiResponse.js";
+import { success } from "../utils/apiResponse.js";
 import * as authService from "../services/authServices.js";
 
 // Endpoint: send OTP for signup 
