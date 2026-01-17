@@ -1,7 +1,7 @@
 import { HttpError } from "./HttpError.js";
-import { error as sendError } from "../utils/response.js";
+import { error as sendError } from "../utils/apiResponse.js";
 
-export const globalErrorHandler = (err, req, res, next) => {
+const  globalErrorHandler = (err, req, res, next) => {
 
   if (err instanceof HttpError) {
     // Use statusCode and message from your HttpError
@@ -11,3 +11,5 @@ export const globalErrorHandler = (err, req, res, next) => {
   // fallback for unknown errors
   return sendError(res, "Internal Server Error", 500);
 };
+
+export default globalErrorHandler;

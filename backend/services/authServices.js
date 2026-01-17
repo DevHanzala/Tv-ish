@@ -1,4 +1,4 @@
-import { HttpError } from "../exception/HttpError";
+import { HttpError } from "../exception/HttpError.js";
 import { supabase } from "../config/supabaseClient.js";
 
 // Service: send OTP for signup
