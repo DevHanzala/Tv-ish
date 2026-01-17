@@ -1,9 +1,11 @@
+import { HttpError } from "../exception/HttpError";
+
 // Service: send OTP for signup
 export const signupSendOtp = async (email) => {
 
     // Validate email
     if (!email) {
-        throw new Error("Email is required");
+        throw new HttpError("Email is required", 400);
     }
 
     const { data: existingProfile } = await supabase
@@ -13,7 +15,7 @@ export const signupSendOtp = async (email) => {
         .single();
 
     if (existingProfile) {
-        throw new Error("Email already registered. Please login.");
+        throw new HttpError("Email already registered. Please login.", 409);
     }
 
     const { error } = await supabase.auth.signInWithOtp({
@@ -22,7 +24,7 @@ export const signupSendOtp = async (email) => {
     });
 
     if (error) {
-        throw error;
+        throw new HttpError(error.message, 500);
     }
 
     return true;
@@ -40,7 +42,7 @@ export const signupVerifyOtp = async ({
 
     // validate input fields
     if (!email || !token || !password || !firstName || !lastName || !phone) {
-        throw new Error("All fields are required to complete signup");
+        throw new HttpError("All fields are required to complete signup", 400);
     }
 
     // Verify OTP (authenticates user)
@@ -51,11 +53,11 @@ export const signupVerifyOtp = async ({
     });
 
     if (verifyError) {
-        throw new Error(verifyError.message);
+        throw new HttpError(verifyError.message, 400);
     }
 
     if (!data?.user || !data?.session) {
-        throw new Error("OTP verification failed");
+        throw new HttpError("OTP verification failed", 400);
     }
 
     const userId = data.user.id;
@@ -68,7 +70,7 @@ export const signupVerifyOtp = async ({
         .single();
 
     if (existingProfile) {
-        throw new Error("User already registered. Please login.");
+        throw new HttpError("User already registered. Please login.", 409);
     }
 
     // Set password
@@ -77,7 +79,7 @@ export const signupVerifyOtp = async ({
     });
 
     if (passwordError) {
-        throw new Error(passwordError.message);
+        throw new HttpError(passwordError.message, 400);
     }
 
     // Create profile 
@@ -90,7 +92,7 @@ export const signupVerifyOtp = async ({
     });
 
     if (profileError) {
-        throw new Error("Profile creation failed");
+        throw new HttpError("Profile creation failed", 500);
     }
 
     return {
@@ -111,7 +113,7 @@ export const login = async (email, password) => {
 
     // Validate email and password
     if (!email || !password) {
-        throw new Error("Email and password are required");
+        throw new HttpError("Email and password are required", 400);
     }
 
     // Authenticate
@@ -122,7 +124,7 @@ export const login = async (email, password) => {
         });
 
     if (loginError) {
-        throw new Error(loginError.message);
+        throw new HttpError(loginError.message, 401);
     }
 
     const userId = data.user.id;
@@ -135,8 +137,9 @@ export const login = async (email, password) => {
         .single();
 
     if (profileError || !profile) {
-        throw new Error(
-            "Profile not found. Please complete signup or contact support."
+        throw new HttpError(
+            "Profile not found. Please complete signup or contact support.",
+            404
         );
     }
 
@@ -151,7 +154,7 @@ export const login = async (email, password) => {
 export const forgotPasswordSendOtp = async (email) => {
     // Validate input
     if (!email) {
-        throw new Error("Email is required");
+        throw new HttpError("Email is required", 400);
     }
 
     // Send reset OTP
@@ -160,7 +163,7 @@ export const forgotPasswordSendOtp = async (email) => {
     });
 
     if (error) {
-        throw new Error(error.message);
+        throw new HttpError(error.message, 500);
     }
     return true;
 };
@@ -170,7 +173,7 @@ export const forgotPasswordVerifyOtp = async (email, token) => {
 
     //  Validate input
     if (!email || !token) {
-        throw new Error("Email and OTP are required");
+        throw new HttpError("Email and OTP are required", 400);
     }
 
     // verify OTP
@@ -181,7 +184,7 @@ export const forgotPasswordVerifyOtp = async (email, token) => {
     });
 
     if (verifyError) {
-        throw new Error(verifyError.message);
+        throw new HttpError(verifyError.message, 400);
     }
 
     return {
@@ -193,14 +196,13 @@ export const forgotPasswordVerifyOtp = async (email, token) => {
 //  Service: reset user password
 export const resetPassword = async (newPassword) => {
     //validate input
-    if (!newPassword) throw new Error("New password is required");
+    if (!newPassword) throw new HttpError("New password is required", 400);
 
     //update password
     const { error: updateError } = await supabase.auth.updateUser({ password: newPassword });
 
-    if (updateError) {
-        throw new Error(updateError.message);
-    }
+    if (updateError) throw new HttpError(updateError.message, 400);
+
     return { updated: true };
 };
 
