@@ -1,5 +1,5 @@
 import { HttpError } from "../utils/HttpError.js";
-import { error as sendError } from "../utils/response.js"; // your wrapper
+import { error as sendError } from "../utils/response.js";
 
 export const globalErrorHandler = (err, req, res, next) => {
 
