@@ -1,32 +1,27 @@
-import {useNavigate} from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import WatchedVideos from "../components/WatchedVideos";
 import AnalyticsGraph from "../components/AnalyticsGraph";
 import Sidebar from "../components/Sidebar";
 import PlaylistSection from "../components/PlaylistSection";
-import { useState, useEffect } from "react";
-import { supabase } from "../config/supabase.js";
+import { useEffect } from "react";
+import { useAuth } from "../hooks/useAuth";
 
 const Dashboard = () => {
 
- const navigate = useNavigate();
-  const [checkingAuth, setCheckingAuth] = useState(true);
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
 
+  // checks for authentication for each state change
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      console.log("🧾 CURRENT SESSION", data.session);
+    if (!loading && !user) {
+      navigate("/login", { replace: true });
+    }
+  }, [loading, user]);
 
-      if (!data.session) {
-        console.log("❌ NO SESSION → REDIRECT TO LOGIN");
-        navigate("/login", { replace: true });
-      }
-
-      setCheckingAuth(false);
-    });
-  }, [navigate]);
-
-  if (checkingAuth) {
+  if (loading) {
     return <div className="text-white p-6">Checking authentication…</div>;
   }
+
   // Video data with ads revenue & other revenue
   const videoData = [
     {
@@ -100,59 +95,59 @@ const Dashboard = () => {
     },
     monthly: {
       labels: [
-        "JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"
+        "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"
       ],
       datasets: [
         {
           label: "Ads Revenue",
-          data: [30,32,35,38,40,42,45,47,50,55,60,65],
+          data: [30, 32, 35, 38, 40, 42, 45, 47, 50, 55, 60, 65],
           borderColor: "#FACC15",
           backgroundColor: "rgba(250,204,21,0.2)",
         },
         {
           label: "Other Revenue",
-          data: [5,6,7,8,9,10,11,12,13,14,15,16],
+          data: [5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
           borderColor: "#22D3EE",
           backgroundColor: "rgba(34,211,238,0.2)",
         },
         {
           label: "Views",
-          data: [150, 160, 170, 180, 200, 210, 230, 250,250,400,450,500],
+          data: [150, 160, 170, 180, 200, 210, 230, 250, 250, 400, 450, 500],
           borderColor: "#A78BFA",
           backgroundColor: "rgba(167,139,250,0.2)",
         },
         {
           label: "Subscribers",
-          data: [10, 12, 13, 14, 16, 18, 20, 22,24,26,28,30],
+          data: [10, 12, 13, 14, 16, 18, 20, 22, 24, 26, 28, 30],
           borderColor: "#F87171",
           backgroundColor: "rgba(248,113,113,0.2)",
         },
       ],
     },
     yearly: {
-      labels: ["2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"],
+      labels: ["2015", "2016", "2017", "2018", "2019", "2020", "2021", "2022", "2023", "2024", "2025"],
       datasets: [
         {
           label: "Ads Revenue",
-          data: [200,220,230,250,270,290,300,320,350,400,450],
+          data: [200, 220, 230, 250, 270, 290, 300, 320, 350, 400, 450],
           borderColor: "#FACC15",
           backgroundColor: "rgba(250,204,21,0.2)",
         },
         {
           label: "Other Revenue",
-          data: [20,22,25,28,30,32,35,37,40,45,50],
+          data: [20, 22, 25, 28, 30, 32, 35, 37, 40, 45, 50],
           borderColor: "#22D3EE",
           backgroundColor: "rgba(34,211,238,0.2)",
         },
         {
           label: "Views",
-          data: [1000,1200,1300,1100,1600,1700,1800,1900,2000,2200,2500],
+          data: [1000, 1200, 1300, 1100, 1600, 1700, 1800, 1900, 2000, 2200, 2500],
           borderColor: "#A78BFA",
           backgroundColor: "rgba(167,139,250,0.2)",
         },
         {
           label: "Subscribers",
-          data: [50, 70, 60, 80, 90, 100, 110, 115,120,130,140],
+          data: [50, 70, 60, 80, 90, 100, 110, 115, 120, 130, 140],
           borderColor: "#F87171",
           backgroundColor: "rgba(248,113,113,0.2)",
         },
