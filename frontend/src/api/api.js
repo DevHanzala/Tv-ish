@@ -23,6 +23,11 @@ api.interceptors.request.use(async (config) => {
     "/auth/signup",
     "/auth/send-otp",
     "/auth/verify-otp",
+
+    // Forgot Password
+    "/auth/forgot-password/send-otp",
+    "/auth/forgot-password/verify-otp",
+    "/auth/forgot-password/reset",
   ];
 
   if (publicRoutes.some((route) => config.url?.startsWith(route))) {

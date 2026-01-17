@@ -9,21 +9,11 @@ import { useAuth } from "../hooks/useAuth";
 const ForgotPasswordPage3 = () => {
   const navigate = useNavigate();
   const location = useLocation();
-const accessToken = location.state?.accessToken;
-
-useEffect(() => {
-  if (!accessToken) {
-    navigate("/forgetpassword_page");
-  }
-}, [accessToken, navigate]);
-
-
-
-
+  const accessToken = location.state?.accessToken;
 
   const { resetPassword } = useAuth();
-const [loading, setLoading] = useState(false);
-const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -33,15 +23,15 @@ const [error, setError] = useState("");
   const [showConfirm, setShowConfirm] = useState(false);
 
   // 🔁 Check email state and listen for screen resize
-  useEffect(() => {
-    if (!email) {
-      navigate("/forgetpassword_page2");
-    }
+  // useEffect(() => {
+  //   if (!accessToken) {
+  //     navigate("/forgetpassword_page");
+  //   }
 
-    const handleResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [email, navigate]);
+  //   const handleResize = () => setIsMobile(window.innerWidth < 768);
+  //   window.addEventListener("resize", handleResize);
+  //   return () => window.removeEventListener("resize", handleResize);
+  // }, [accessToken, navigate]);
 
   // 🎞️ Posters array
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
@@ -61,28 +51,28 @@ const [error, setError] = useState("");
   const allValid = Object.values(validations).every(Boolean) && newPassword === confirmPassword;
 
   // 🔐 Reset Password Handler
- const handleReset = async () => {
-  if (!allValid) {
-    setError("Password rules not satisfied.");
-    return;
-  }
+  const handleReset = async () => {
+    if (!allValid) {
+      setError("Password rules not satisfied.");
+      return;
+    }
 
-  try {
-    setLoading(true);
-    setError("");
-  await resetPassword({
-  accessToken,
-  newPassword,
-});
+    try {
+      setLoading(true);
+      setError("");
+      await resetPassword({
+        accessToken,
+        newPassword,
+      });
 
-navigate("/login");
+      navigate("/login");
 
-  } catch (err) {
-    setError(err?.response?.data?.message || "Reset failed");
-  } finally {
-    setLoading(false);
-  }
-};
+    } catch (err) {
+      setError(err?.response?.data?.message || "Reset failed");
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
   const containerVariants = {
@@ -163,7 +153,7 @@ navigate("/login");
         transition={{ duration: 0.8, ease: "easeOut" }}
       >
         <div className="w-full max-w-md space-y-6">
-          
+
           {/* 🔙 Top Nav */}
           <div className="flex justify-between items-start text-sm text-gray-300">
             <button

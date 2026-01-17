@@ -33,6 +33,7 @@ const ForgotPasswordPage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
   const handleNext = async () => {
+    console.log("REQUESTING OTP FOR EMAIL:", email);
     if (!email.trim()) {
       setError("Please enter your email.");
       return;
@@ -42,7 +43,7 @@ const ForgotPasswordPage = () => {
       setLoading(true);
       setError("");
      await forgotPasswordSendOtp(email);
-navigate("/forgot-password-verify", { state: { email } });
+navigate("/forgetpassword_page2", { state: { email } });
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to send reset OTP");
     } finally {

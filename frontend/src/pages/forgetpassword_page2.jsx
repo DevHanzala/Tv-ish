@@ -72,7 +72,7 @@ const ForgotPasswordPage2 = () => {
         token: otp,
       });
 
-      navigate("/reset-password", {
+      navigate("/resetpassword_page", {
         state: { accessToken: res.data.accessToken },
       });
 

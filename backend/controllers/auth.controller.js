@@ -124,12 +124,18 @@ export const login = asyncHandler(async (req, res) => {
 export const forgotPasswordSendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
+  console.log("FORGOT PASSWORD OTP REQUEST FOR:", email);
+
   if (!email) {
     return error(res, "Email is required");
   }
 
   const { error: resetError } =
-    await supabase.auth.resetPasswordForEmail(email);
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${process.env.FRONTEND_URL}/resetpassword_page`,
+    });
+
+  console.error("RESET PASSWORD OTP ERROR:", resetError);
 
   if (resetError) {
     return error(res, resetError.message);
@@ -144,6 +150,7 @@ export const forgotPasswordSendOtp = asyncHandler(async (req, res) => {
 export const forgotPasswordVerifyOtp = asyncHandler(async (req, res) => {
   const { email, token } = req.body;
 
+  console.log("FORGOT PASSWORD VERIFY OTP REQUEST FOR:", email);
   if (!email || !token) {
     return error(res, "Email and OTP are required");
   }
@@ -158,9 +165,10 @@ export const forgotPasswordVerifyOtp = asyncHandler(async (req, res) => {
     return error(res, verifyError.message);
   }
 
-  return success(res, "OTP verified", {
-    user: data.user,
-  });
+ return success(res, "OTP verified", {
+  user: data.user,
+  session: data.session, // ← REQUIRED
+});
 });
 
 /* ======================================================
@@ -168,7 +176,7 @@ export const forgotPasswordVerifyOtp = asyncHandler(async (req, res) => {
 ====================================================== */
 export const resetPassword = asyncHandler(async (req, res) => {
   const { newPassword } = req.body;
-
+console.log("RESET PASSWORD ATTEMPT – AUTH CONTEXT VALID");
   if (!newPassword) {
     return error(res, "New password is required");
   }

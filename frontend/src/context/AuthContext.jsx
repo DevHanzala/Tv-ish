@@ -14,13 +14,30 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);        // auth identity
   const [profile, setProfile] = useState(null);  // profile / channel data
   const [loading, setLoading] = useState(true);
+  
 
 
   /* ===================== AUTH STATE SYNC ===================== */
 
+  console.log("🧠 AUTH CONTEXT FULL STATE:", {
+  user,
+  loading,
+  // isAuthenticated,
+});
+
+
+useEffect(() => {
+  console.log("🧠 AUTH CONTEXT STATE:", { user, loading });
+}, [user, loading]);
+
+
+
 // Fetch profile when user changes  
 useEffect(() => {
-  if (!user) return;
+  if (!user) {
+    console.log("No user logged in, skipping profile fetch");
+    return;
+  }
 
   const fetchProfile = async () => {
     try {
@@ -124,6 +141,7 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   // Send OTP
   const forgotPasswordSendOtp = useCallback((email) => {
+    console.log("FORGOT PASSWORD OTP REQUEST FOR:", email);
     return authApi.forgotPasswordSendOtp(email);
   }, []);
 
