@@ -1,4 +1,5 @@
 import { HttpError } from "../exception/HttpError";
+import { supabase } from "../config/supabaseClient.js";
 
 // Service: send OTP for signup
 export const signupSendOtp = async (email) => {
