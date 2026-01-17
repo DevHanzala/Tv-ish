@@ -2,26 +2,26 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { success, error } from "../utils/apiResponse.js";
 import * as authService from "../services/authServices.js";
 
-// Endpoint to send OTP for signup 
+// Endpoint: send OTP for signup 
 export const signupSendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body; await authService.signupSendOtp(email);
   return success(res, "OTP sent successfully");
 });
 
-// Endpoint to verify OTP and complete signup
+// Endpoint: verify OTP and complete signup
 export const signupVerifyOtp = asyncHandler(async (req, res) => {
   const data = await authService.signupVerifyOtp(req.body);
   return success(res, "Signup completed", data);
 });
 
-// Endpoint to login user
+// Endpoint: login user
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
   const data = await authService.login(email, password);
   return success(res, "Login successful", data);
 });
 
-// endpoint to send OTP for password recovery
+// Endpoint: send OTP for password recovery
 export const forgotPasswordSendOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
   await authService.forgotPasswordSendOtp(email);
