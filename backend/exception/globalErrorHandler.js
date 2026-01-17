@@ -1,4 +1,4 @@
-import { HttpError } from "../utils/HttpError.js";
+import { HttpError } from "./HttpError.js";
 import { error as sendError } from "../utils/response.js";
 
 export const globalErrorHandler = (err, req, res, next) => {
