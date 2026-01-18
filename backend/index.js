@@ -9,7 +9,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(corsConfig);
-app.use(express.json()); // ✅ REQUIRED
+app.use(express.json()); // REQUIRED
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
@@ -26,7 +26,7 @@ app.use(globalErrorHandler);
 
 // Server startup
 app.listen(PORT, async () => {
-  console.log(`🚀 Backend running at http://localhost:${PORT}`);
+  console.log(`Backend running at http://localhost:${PORT}`);
 
   try {
     const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/`, {
@@ -38,11 +38,11 @@ app.listen(PORT, async () => {
   
 
     if (res.ok) {
-      console.log("✅ Supabase API reachable");
+      console.log("Supabase API reachable");
     } else {
-      console.error("❌ Supabase API responded but rejected request");
+      console.error("Supabase API responded but rejected request");
     }
   } catch (err) {
-    console.error("❌ Supabase API unreachable:", err.message);
+    console.error("Supabase API unreachable:", err.message);
   }
 });
