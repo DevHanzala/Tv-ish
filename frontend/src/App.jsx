@@ -94,6 +94,7 @@ import Audience from "./components/Audience";
 
 
 import AboutUs from "./pages/aboutus";
+import PublicRoute from "./guards/PublicRoute";
 
 
 // ✅ Layout Wrapper Component
@@ -249,12 +250,12 @@ function App() {
               <Route path="/searchBar" element={<SearchBar />} />
 
               {/* Auth Routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup_page" element={<SignupPage />} />
-              <Route path="/signup_page2" element={<SignupPage2 />} />
-              <Route path="/forgetpassword_page" element={<ForgotPasswordPage />} />
-              <Route path="/forgetpassword_page2" element={<ForgotPasswordPage2 />} />
-              <Route path="/resetpassword_page" element={<ForgotPasswordPage3 />} />
+              <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
+              <Route path="/signup_page" element={<PublicRoute><SignupPage /></PublicRoute>} />
+              <Route path="/signup_page2" element={<PublicRoute><SignupPage2 /></PublicRoute>} />
+              <Route path="/forgetpassword_page" element={<PublicRoute><ForgotPasswordPage /></PublicRoute>} />
+              <Route path="/forgetpassword_page2" element={<PublicRoute><ForgotPasswordPage2 /></PublicRoute>} />
+              <Route path="/resetpassword_page" element={<PublicRoute><ForgotPasswordPage3 /></PublicRoute>} />
 
               {/* Navbar test route */}
               <Route path="/navbar" element={<NavbarPage />} />
