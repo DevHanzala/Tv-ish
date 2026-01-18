@@ -34,4 +34,3 @@ export const supabaseAdmin = createClient(
 );
 
 
-console.log("✅ Supabase client initialized (service role)");

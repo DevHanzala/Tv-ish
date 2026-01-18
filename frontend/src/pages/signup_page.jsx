@@ -35,7 +35,6 @@ const SignupPage = () => {
 
   // 👉 Handle "Continue" button click
   const handleContinue = async () => {
-    console.log("🚀 Signup attempt with:", { firstName, lastName, email, phone, password });
     if (!firstName || !lastName || !email || !password) {
       setError("Please fill in all required fields.");
       return;
@@ -45,7 +44,6 @@ const SignupPage = () => {
       setError("");
 
       await signupSendOtp(email, password);
-      console.log("✅ OTP sent successfully to:", email);
 
       // Save draft to sessionStorage
       sessionStorage.setItem(

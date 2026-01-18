@@ -33,7 +33,6 @@ const ForgotPasswordPage = () => {
     visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } },
   };
   const handleNext = async () => {
-    console.log("REQUESTING OTP FOR EMAIL:", email);
     if (!email.trim()) {
       setError("Please enter your email.");
       return;

@@ -111,7 +111,6 @@ const verifyCode = async () => {
       phone,
       password
     });
-    console.log("✅ OTP verified successfully for:", email);
 
     // Clear draft from sessionStorage    
     sessionStorage.removeItem("signupDraft");

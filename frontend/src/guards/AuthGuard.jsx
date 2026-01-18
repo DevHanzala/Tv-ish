@@ -4,7 +4,6 @@ import { useAuth } from "../hooks/useAuth";
 const AuthGuard = ({ children }) => {
   const { loading, isAuthenticated } = useAuth();
   if (loading) {
-    console.log("⏳ AuthGuard waiting for auth...");
     return <div className="text-white p-4">Checking authentication…</div>;
   }
 

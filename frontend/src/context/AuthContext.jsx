@@ -19,11 +19,6 @@ export const AuthProvider = ({ children }) => {
 
   /* ===================== AUTH STATE SYNC ===================== */
 
-  console.log("🧠 AUTH CONTEXT FULL STATE:", {
-  user,
-  loading,
-  // isAuthenticated,
-});
 
 
 useEffect(() => {
@@ -35,7 +30,6 @@ useEffect(() => {
 // Fetch profile when user changes  
 useEffect(() => {
   if (!user) {
-    console.log("No user logged in, skipping profile fetch");
     return;
   }
 
@@ -79,7 +73,6 @@ useEffect(() => {
 
   // Send OTP
   const signupSendOtp = useCallback((email, password) => {
-    console.log("SEND OTP TO:", email);
     return authApi.signupSendOtp({ email, password });
   }, []);
 
@@ -120,7 +113,6 @@ const signupVerifyOtp = useCallback(async (payload) => {
   setUser(user);
   setProfile(profile || null);
   setLoading(false);
-  console.log("🧩 PARSED USER:", user);
   return res;
 }, []);
 
@@ -141,7 +133,6 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   // Send OTP
   const forgotPasswordSendOtp = useCallback((email) => {
-    console.log("FORGOT PASSWORD OTP REQUEST FOR:", email);
     return authApi.forgotPasswordSendOtp(email);
   }, []);
 
@@ -174,7 +165,6 @@ setUser(user);
 setProfile(profile);
 
     setLoading(false);
-    console.log("🧩 PARSED USER:", user);
   }, []);
 
 

@@ -4,7 +4,7 @@ import { corsConfig } from "./config/cors.js";
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
 import globalErrorHandler from "./exception/globalErrorHandler.js"
-
+import { HttpError } from "./exception/HttpError.js";
 const app = express();
 const PORT = process.env.PORT || 5000;
 
@@ -21,6 +21,10 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+app.get("/", (req, res) => {
+  res.status(200).send("Welcome to Tv_ish Backend!");
+});
+
 // Global Exception handler
 app.use(globalErrorHandler);
 
@@ -34,14 +38,6 @@ app.listen(PORT, async () => {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
     });
-
-  
-
-    if (res.ok) {
-      console.log("✅ Supabase API reachable");
-    } else {
-      console.error("❌ Supabase API responded but rejected request");
-    }
   } catch (err) {
     console.error("❌ Supabase API unreachable:", err.message);
   }

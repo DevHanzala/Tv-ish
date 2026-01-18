@@ -22,16 +22,6 @@ const ForgotPasswordPage3 = () => {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // 🔁 Check email state and listen for screen resize
-  // useEffect(() => {
-  //   if (!accessToken) {
-  //     navigate("/forgetpassword_page");
-  //   }
-
-  //   const handleResize = () => setIsMobile(window.innerWidth < 768);
-  //   window.addEventListener("resize", handleResize);
-  //   return () => window.removeEventListener("resize", handleResize);
-  // }, [accessToken, navigate]);
 
   // 🎞️ Posters array
   const images = Array.from({ length: 15 }, (_, i) => `/images/login_img${i + 1}.png`);
