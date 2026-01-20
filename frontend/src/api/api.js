@@ -3,7 +3,7 @@ import { supabase } from "../config/supabase";
 
 // Create Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api",
+  baseURL: import.meta.env.VITE_API_BASE_URL || "https://tv-ish-1.onrender.com/api",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
