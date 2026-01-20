@@ -4,7 +4,8 @@ import * as authService from "../services/authServices.js";
 
 // Endpoint: send OTP for signup 
 export const signupSendOtp = asyncHandler(async (req, res) => {
-  const { email } = req.body; await authService.signupSendOtp(email);
+  const { email } = req.body;
+  await authService.signupSendOtp(email);
   return success(res, "OTP sent successfully");
 });
 
