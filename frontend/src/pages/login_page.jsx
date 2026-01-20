@@ -26,7 +26,7 @@ const LoginPage = () => {
   // Auth context
   const { login, socialLogin } = useAuth();
 
-// 🔁 Listen for screen resize
+  // 🔁 Listen for screen resize
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth < 768);
     window.addEventListener("resize", handleResize);
@@ -215,10 +215,10 @@ const LoginPage = () => {
               />
             </motion.div>
             <motion.div whileHover={{ scale: 1.2, transition: { duration: 0.3 } }}>
-            <FaLinkedin
-  className="text-3xl cursor-pointer hover:text-blue-400"
-  onClick={() => socialLogin("linkedin_oidc")}
-/>
+              <FaLinkedin
+                className="text-3xl cursor-pointer hover:text-blue-400"
+                onClick={() => socialLogin("linkedin_oidc")}
+              />
             </motion.div>
           </div>
         </div>

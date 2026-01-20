@@ -6,6 +6,7 @@ import {
   FaClosedCaptioning, FaCopyright, FaCog, FaCommentDots
 } from 'react-icons/fa';
 import Notification from './notification';
+import { useAuth } from '../hooks/useAuth';
 
 const DashboardSidebar2 = ({
   showSearch = true,
@@ -16,6 +17,7 @@ const DashboardSidebar2 = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
+  const { profile, user } = useAuth();
 
   const toggleSidebar = () => {
     setSidebarOpen(prev => !prev);
@@ -60,6 +62,8 @@ const DashboardSidebar2 = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
+          user={user}
+          profile={profile}
           onItemClick={() => setSidebarOpen(false)}
         />
       </aside>
@@ -91,6 +95,8 @@ const DashboardSidebar2 = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
+          user={user}
+          profile={profile}
           onItemClick={() => setSidebarOpen(false)}
         />
       </aside>
@@ -160,7 +166,7 @@ const DashboardSidebar2 = ({
   );
 };
 
-const SidebarContent = ({ menuItems, bottomItems, onItemClick }) => {
+const SidebarContent = ({ menuItems, bottomItems, user, profile, onItemClick }) => {
   const navigate = useNavigate();
 
   return (
@@ -178,12 +184,22 @@ const SidebarContent = ({ menuItems, bottomItems, onItemClick }) => {
 
       <div className="flex flex-col items-center py-6 border-b border-gray-700 pt-12">
         <img
-          src="https://i.pravatar.cc/100?img=3"
+ src={
+    user?.user_metadata?.avatar_url ||
+    `https://api.dicebear.com/7.x/initials/svg?seed=${user?.email || 'User'}`
+  }
           alt="Profile"
           className="w-20 h-20 rounded-full mb-2 border-4 border-red-600"
         />
-        <h2 className="text-lg font-semibold">Brooke Cooper</h2>
-        <p className="text-sm text-gray-400">Web Developer</p>
+
+        <h2 className="text-lg font-semibold">
+          {profile?.first_name} {profile?.last_name}
+        </h2>
+
+        <p className="text-sm text-gray-400">
+          {user?.email}
+        </p>
+
       </div>
 
       <nav className="flex flex-col flex-grow mt-4 overflow-y-auto">
@@ -192,8 +208,7 @@ const SidebarContent = ({ menuItems, bottomItems, onItemClick }) => {
             key={label}
             to={path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 space-x-4 text-sm transition-colors ${
-                isActive ? 'bg-red-600 text-white' : 'text-white hover:bg-gray-800'
+              `flex items-center px-6 py-3 space-x-4 text-sm transition-colors ${isActive ? 'bg-red-600 text-white' : 'text-white hover:bg-gray-800'
               }`
             }
             onClick={onItemClick}
@@ -210,10 +225,9 @@ const SidebarContent = ({ menuItems, bottomItems, onItemClick }) => {
             key={label}
             to={path}
             className={({ isActive }) =>
-              `flex items-center px-6 py-3 space-x-4 text-sm transition-colors ${
-                isActive
-                  ? 'bg-red-600 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-white'
+              `flex items-center px-6 py-3 space-x-4 text-sm transition-colors ${isActive
+                ? 'bg-red-600 text-white'
+                : 'text-gray-400 hover:bg-gray-800 hover:text-white'
               }`
             }
             onClick={onItemClick}

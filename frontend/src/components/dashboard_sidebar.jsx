@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useContext } from "react";
+import  { useState, useEffect, useRef } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaHome,
@@ -21,6 +21,8 @@ import {
 import { useAuth } from "../hooks/useAuth";
 import Notification from "./notification";
 
+
+
 const DashboardSidebar = ({
   showSearch = true,
   showUpload = true,
@@ -30,7 +32,7 @@ const DashboardSidebar = ({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const notifRef = useRef(null);
-  const {  profile, logout } = useAuth();
+  const {  profile, logout, user } = useAuth();
 
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
@@ -81,7 +83,8 @@ const DashboardSidebar = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
-          // channel={channel}
+          profile={profile}
+          user={user}
           onItemClick={() => { }}
         />
       </aside>
@@ -109,6 +112,7 @@ const DashboardSidebar = ({
           menuItems={menuItems}
           bottomItems={bottomItems}
           profile={profile}
+          user={user}
         />
 
       </aside>
@@ -185,12 +189,15 @@ const DashboardSidebar = ({
   );
 };
 
-const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick }) => (
+const SidebarContent = ({ menuItems, bottomItems, profile, user, onItemClick }) => (
   <div className="flex flex-col h-full pt-6 lg:pt-16">
     {/* PROFILE SECTION */}
     <div className="flex flex-col items-center py-2 lg:py-6 border-b border-gray-700">
       <img
-        src={profile?.avatar_url || "https://i.pravatar.cc/100?img=3"}
+ src={
+    user?.user_metadata?.avatar_url ||
+    `https://api.dicebear.com/7.x/initials/svg?seed=${user?.email || 'User'}`
+  }
         alt="Profile"
         className="w-20 h-20 rounded-full mb-2 border-4 border-red-500 shadow-md"
       />
@@ -200,7 +207,7 @@ const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick }) => (
       </h2>
 
       <p className="text-sm text-gray-400">
-        {profile?.email}
+        {user?.email}
       </p>
     </div>
 
