@@ -19,11 +19,6 @@ export const AuthProvider = ({ children }) => {
 
   /* ===================== AUTH STATE SYNC ===================== */
 
-  console.log("🧠 AUTH CONTEXT FULL STATE:", {
-  user,
-  loading,
-  // isAuthenticated,
-});
 
 
 useEffect(() => {
@@ -35,7 +30,6 @@ useEffect(() => {
 // Fetch profile when user changes  
 useEffect(() => {
   if (!user) {
-    console.log("No user logged in, skipping profile fetch");
     return;
   }
 
@@ -56,6 +50,7 @@ useEffect(() => {
 useEffect(() => {
   const { data: subscription } = supabase.auth.onAuthStateChange(
     (event, session) => {
+      console.log("AUTH EVENT:", event);
 
       if (!session) {
         setUser(null);
@@ -64,31 +59,20 @@ useEffect(() => {
         return;
       }
 
+      //  set user
       setUser(session.user);
       setLoading(false);
-
-      // ✅ CLEAN OAuth TOKENS FROM URL (CRITICAL)
-      if (
-        event === "SIGNED_IN" &&
-        window.location.hash.includes("access_token")
-      ) {
-        window.history.replaceState(
-          {},
-          document.title,
-          window.location.pathname
-        );
-      }
     }
   );
 
   return () => subscription.subscription.unsubscribe();
 }, []);
 
+
   /* ===================== SIGNUP (OTP FLOW) ===================== */
 
   // Send OTP
   const signupSendOtp = useCallback((email, password) => {
-    console.log("SEND OTP TO:", email);
     return authApi.signupSendOtp({ email, password });
   }, []);
 
@@ -129,7 +113,6 @@ const signupVerifyOtp = useCallback(async (payload) => {
   setUser(user);
   setProfile(profile || null);
   setLoading(false);
-  console.log("🧩 PARSED USER:", user);
   return res;
 }, []);
 
@@ -150,7 +133,6 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   // Send OTP
   const forgotPasswordSendOtp = useCallback((email) => {
-    console.log("FORGOT PASSWORD OTP REQUEST FOR:", email);
     return authApi.forgotPasswordSendOtp(email);
   }, []);
 
@@ -183,7 +165,6 @@ setUser(user);
 setProfile(profile);
 
     setLoading(false);
-    console.log("🧩 PARSED USER:", user);
   }, []);
 
 
