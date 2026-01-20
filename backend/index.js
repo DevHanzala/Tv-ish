@@ -3,50 +3,52 @@ import "dotenv/config";
 import { corsConfig } from "./config/cors.js";
 import authRoutes from "./routes/auth.routes.js";
 import profileRoutes from "./routes/profile.routes.js";
-import globalErrorHandler from "./exception/globalErrorHandler.js"
-import { HttpError } from "./exception/HttpError.js";
-const app = express();
-const PORT = process.env.PORT || 5000;
+import globalErrorHandler from "./exception/globalErrorHandler.js";
 
+const app = express();
+
+// Middleware
 app.use(corsConfig);
-app.use(express.json()); // REQUIRED
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/profile", profileRoutes);
 
-// Health check (NO DB logic)
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
-});
-
-app.get("/", (req, res) => {
-  res.status(200).send("Welcome to Tv_ish Backend!");
-});
-
-// Global Exception handler
-app.use(globalErrorHandler);
-
-// Server startup
-app.listen(PORT, async () => {
-  console.log(`Backend running at http://localhost:${PORT}`);
+// 🔍 Root status (ALL INFO SHOWN HERE)
+app.get("/", async (req, res) => {
+  let supabaseStatus = "unknown";
 
   try {
-    const res = await fetch(`${process.env.SUPABASE_URL}/rest/v1/`, {
+    const response = await fetch(`${process.env.SUPABASE_URL}/rest/v1/`, {
       headers: {
         apikey: process.env.SUPABASE_SERVICE_ROLE_KEY,
       },
     });
 
-  
-
-    if (res.ok) {
-      console.log("Supabase API reachable");
-    } else {
-      console.error("Supabase API responded but rejected request");
-    }
-  } catch (err) {
-    console.error("Supabase API unreachable:", err.message);
+    supabaseStatus = response.ok ? "reachable" : "rejected";
+  } catch {
+    supabaseStatus = "unreachable";
   }
+
+  res.status(200).json({
+    service: "Tv_ish Backend",
+    status: "running",
+    environment: process.env.NODE_ENV || "production",
+    supabase: supabaseStatus,
+    timestamp: new Date().toISOString(),
+  });
 });
+
+// Health check (minimal)
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok" });
+});
+
+// Global error handler
+app.use(globalErrorHandler);
+
+// Server startup (NO LOGS)
+const PORT = process.env.PORT || 10000;
+app.listen(PORT);

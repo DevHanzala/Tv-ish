@@ -1,7 +1,6 @@
 import cors from "cors";
 
 export const corsConfig = cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
+  origin: process.env.CORS_ORIGIN || "https://tv-ish-frontend.onrender.com",
   credentials: true,
 });
-console.log("CORS configured with origin:", process.env.CORS_ORIGIN || "http://localhost:5173");
