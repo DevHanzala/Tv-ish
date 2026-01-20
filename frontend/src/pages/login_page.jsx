@@ -217,7 +217,7 @@ const LoginPage = () => {
             <motion.div whileHover={{ scale: 1.2, transition: { duration: 0.3 } }}>
             <FaLinkedin
   className="text-3xl cursor-pointer hover:text-blue-400"
-  onClick={() => socialLogin("linkedin")}
+  onClick={() => socialLogin("linkedin_oidc")}
 />
             </motion.div>
           </div>
