@@ -56,7 +56,6 @@ useEffect(() => {
 useEffect(() => {
   const { data: subscription } = supabase.auth.onAuthStateChange(
     (event, session) => {
-      console.log("AUTH EVENT:", event);
 
       if (!session) {
         setUser(null);
@@ -65,15 +64,25 @@ useEffect(() => {
         return;
       }
 
-      //  set user
       setUser(session.user);
       setLoading(false);
+
+      // ✅ CLEAN OAuth TOKENS FROM URL (CRITICAL)
+      if (
+        event === "SIGNED_IN" &&
+        window.location.hash.includes("access_token")
+      ) {
+        window.history.replaceState(
+          {},
+          document.title,
+          window.location.pathname
+        );
+      }
     }
   );
 
   return () => subscription.subscription.unsubscribe();
 }, []);
-
 
   /* ===================== SIGNUP (OTP FLOW) ===================== */
 
