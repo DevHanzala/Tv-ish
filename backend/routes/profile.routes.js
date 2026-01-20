@@ -6,7 +6,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 const router = express.Router();
 
 router.get("/me", requireAuth, asyncHandler(getMyProfile));
-router.patch("/", requireAuth, asyncHandler(updateMyProfile));
+router.patch("/update", requireAuth, asyncHandler(updateMyProfile));
 
 // Email change
 router.post(
