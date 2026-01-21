@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Upload, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { uploadVideo } from "../services/video.js"
+import { useAuth } from "../hooks/useAuth.js";
 
 export default function UploadVideos() {
   const [open, setOpen] = useState(false);
@@ -10,6 +12,7 @@ export default function UploadVideos() {
   const [completed, setCompleted] = useState(false);
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
+  const {user} = useAuth();
 
   useEffect(() => {
     setOpen(true);
@@ -30,15 +33,25 @@ export default function UploadVideos() {
     const files = e.target.files;
     if (files.length > 0) {
       console.log("Selected files:", files);
-      startFakeUpload();
+      startUpload(files);
     }
   };
 
   // Simulate upload progress
-  const startFakeUpload = () => {
+  const startUpload = async (files) => {
+
     setUploading(true);
     setCompleted(false);
     setProgress(0);
+
+    try {
+      // Upload video file
+      await uploadVideo(user.id, files[0]);
+    } 
+    catch(err){
+      console.log("Error occured while creating or uploading video"); 
+      console.log(err);
+    }
 
     let percent = 0;
     const interval = setInterval(() => {
