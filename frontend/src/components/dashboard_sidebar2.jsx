@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect } from "react";
+import  { useState, useEffect } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaThLarge,
@@ -28,7 +28,7 @@ const DashboardSidebar2 = ({
 }) => {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const {profile, logout } = useAuth();
+  const {profile, user, logout } = useAuth();
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
@@ -67,6 +67,8 @@ const DashboardSidebar2 = ({
         <SidebarContent
           menuItems={menuItems}
           bottomItems={bottomItems}
+          profile={profile}
+          user={user}
           onItemClick={() => setSidebarOpen(false)}
           onLogout={handleLogout}
         />
@@ -95,6 +97,7 @@ const DashboardSidebar2 = ({
           menuItems={menuItems}
           bottomItems={bottomItems}
           profile={profile}
+          user={user}
           onItemClick={() => setSidebarOpen(false)}
           onLogout={handleLogout}
         />
@@ -168,7 +171,7 @@ const DashboardSidebar2 = ({
   );
 };
 
-const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick, onLogout }) => {
+const SidebarContent = ({ menuItems, bottomItems, profile, user, onItemClick, onLogout }) => {
 
   const navigate = useNavigate();
 
@@ -189,7 +192,10 @@ const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick, onLogout
       {/* PROFILE SECTION */}
       <div className="flex flex-col items-center py-6 border-b border-gray-700">
         <img
-          src={profile?.avatar_url || "https://i.pravatar.cc/100?img=3"}
+ src={
+    user?.user_metadata?.avatar_url ||
+    `https://api.dicebear.com/7.x/initials/svg?seed=${user?.email || 'User'}`
+  }
           alt="Profile"
           className="w-20 h-20 rounded-full border-4 border-red-600 shadow"
         />
@@ -199,7 +205,7 @@ const SidebarContent = ({ menuItems, bottomItems, profile, onItemClick, onLogout
         </h2>
 
         <p className="text-sm text-gray-400">
-          {profile?.email}
+          {user?.email}
         </p>
 
       </div>

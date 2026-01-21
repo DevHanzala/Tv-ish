@@ -3,6 +3,7 @@ import { useProfile } from "../hooks/useProfile";
 
 const EmailAddress = () => {
   const { profile, requestEmailChange, updatePhone } = useProfile();
+  console.log("EmailAddress Profile:", profile);
 
   /* ================= EMAIL ================= */
   const email = profile?.email || "";
@@ -71,14 +72,14 @@ const EmailAddress = () => {
 
       {/* ================= EMAIL ================= */}
       <section className="bg-[#1c1f24] p-6 rounded-xl max-w-xl">
-        <h2 className="text-xl font-semibold">Email Address</h2>
+        <h2 className="text-xl font-semibold"> Email Address</h2>
         <p className="text-sm text-gray-400 mt-1">
           Email updates require confirmation via email.
         </p>
 
         {!isEditingEmail ? (
           <div className="mt-4 flex justify-between">
-            <span>{email}</span>
+            <span>{profile?.profile?.data?.email || "Not set"}</span>
             <button
               onClick={() => setIsEditingEmail(true)}
               className="text-blue-500 text-sm"
@@ -122,7 +123,7 @@ const EmailAddress = () => {
 
         {!isEditingPhone ? (
           <div className="mt-4 flex justify-between">
-            <span>{phone || "Not set"}</span>
+            <span>{profile?.profile?.data?.phone || "Not set"}</span>
             <button
               onClick={() => setIsEditingPhone(true)}
               className="text-blue-500 text-sm"

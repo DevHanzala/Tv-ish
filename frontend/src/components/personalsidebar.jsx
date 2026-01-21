@@ -1,4 +1,3 @@
-import React, { useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
@@ -7,7 +6,6 @@ const PersonalSidebar = () => {
   const navigate = useNavigate();
 
   const { user, profile, logout } = useAuth();
-
 
   const handleLogin = () => {
     navigate('/login');
@@ -27,7 +25,10 @@ const handleLogout = async () => {
       {user ? (
         <div className="flex flex-col items-center">
           <img
-            src={profile?.avatar_url || 'https://i.pravatar.cc/100?img=3'}
+ src={
+    user?.user_metadata?.avatar_url ||
+    `https://api.dicebear.com/7.x/initials/svg?seed=${user?.email || 'User'}`
+  }
             alt="Profile"
             className="w-16 h-16 rounded-full mb-2 border-2 border-zinc-700"
           />
@@ -37,7 +38,7 @@ const handleLogout = async () => {
           </h2>
 
           <p className="text-sm text-gray-400">
-            {profile?.email}
+            {user?.email}
           </p>
 
           <div className="mt-4 w-full space-y-2">

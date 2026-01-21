@@ -45,7 +45,7 @@ const [dob, setDob] = useState("");
             <div>
               <p className="text-sm text-gray-400">Name</p>
               <p className="text-base font-medium">
-                {profile?.name || "—"}
+                {profile?.profile?.data?.first_name  || "—"} {profile?.profile?.data?.last_name || ""}
               </p>
 
             </div>

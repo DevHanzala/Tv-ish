@@ -9,7 +9,7 @@ export const createProfile = async ({
   phone = null,
 }) => {
   return supabase.from("profiles").insert({
-    id: userId,
+    user_id: userId,
     email,
     first_name: firstName,
     last_name: lastName,
@@ -21,7 +21,7 @@ export const createProfile = async ({
 
 // Fetch profile for logged-in user
 export const getProfileByUserId = async (userId) => {
-  return supabase.from("profiles").select("*").eq("id", userId).single();
+  return supabase.from("profiles").select("*").eq("user_id", userId).single();
 };
 
 //
@@ -29,7 +29,7 @@ export const updateProfileByUserId = (userId, updates) => {
   return supabase
     .from("profiles")
     .update(updates)
-    .eq("id", userId)
+    .eq("user_id", userId)
     .select()
     .single();
 };

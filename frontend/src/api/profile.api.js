@@ -5,7 +5,7 @@ export const getMyProfile = () =>
   api.get("/profile/me");
 
 export const updateMyProfile = (payload) =>
-  api.patch("/profile", payload);
+  api.patch("/profile/update", payload);
 
 /* ===================== SECURITY ===================== */
 
