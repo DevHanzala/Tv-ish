@@ -3,10 +3,9 @@ import { useProfile } from "../hooks/useProfile";
 
 const EmailAddress = () => {
   const { profile, requestEmailChange, updatePhone } = useProfile();
-  console.log("EmailAddress Profile:", profile);
 
   /* ================= EMAIL ================= */
-  const email = profile?.email || "";
+  const email = profile?.profile?.email || "";
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [tempEmail, setTempEmail] = useState(email);
   const [emailError, setEmailError] = useState("");
@@ -21,7 +20,7 @@ const EmailAddress = () => {
       setEmailError("Please enter a different email address.");
       return;
     }
-
+    console.log("Submitting email change to:", tempEmail);
     try {
       setEmailLoading(true);
       setEmailError("");
@@ -37,7 +36,7 @@ const EmailAddress = () => {
   };
 
   /* ================= PHONE ================= */
-  const phone = profile?.phone || "";
+  const phone = profile?.profile?.phone || "";
   const [isEditingPhone, setIsEditingPhone] = useState(false);
   const [tempPhone, setTempPhone] = useState(phone);
   const [phoneError, setPhoneError] = useState("");
@@ -52,7 +51,7 @@ const EmailAddress = () => {
       setPhoneError("Please enter a new phone number.");
       return;
     }
-
+    console.log("Submitting phone change to:", tempPhone);
     try {
       setPhoneLoading(true);
       setPhoneError("");
@@ -79,7 +78,7 @@ const EmailAddress = () => {
 
         {!isEditingEmail ? (
           <div className="mt-4 flex justify-between">
-            <span>{profile?.profile?.data?.email || "Not set"}</span>
+            <span>{profile?.profile?.email || "Not set"}</span>
             <button
               onClick={() => setIsEditingEmail(true)}
               className="text-blue-500 text-sm"
@@ -123,7 +122,7 @@ const EmailAddress = () => {
 
         {!isEditingPhone ? (
           <div className="mt-4 flex justify-between">
-            <span>{profile?.profile?.data?.phone || "Not set"}</span>
+            <span>{profile?.profile?.phone || "Not set"}</span>
             <button
               onClick={() => setIsEditingPhone(true)}
               className="text-blue-500 text-sm"

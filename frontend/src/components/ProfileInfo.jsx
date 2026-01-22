@@ -10,7 +10,6 @@ const ProfileInfo = () => {
 const [dob, setDob] = useState("");
   const navigate = useNavigate();
   const { profile, loading } = useProfile();
-
   if (loading) return null;
 
 
@@ -45,7 +44,7 @@ const [dob, setDob] = useState("");
             <div>
               <p className="text-sm text-gray-400">Name</p>
               <p className="text-base font-medium">
-                {profile?.profile?.data?.first_name  || "—"} {profile?.profile?.data?.last_name || ""}
+                {profile?.profile?.first_name  || "—"} {profile?.profile?.last_name || ""}
               </p>
 
             </div>

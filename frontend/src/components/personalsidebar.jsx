@@ -1,11 +1,12 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-
+import { useProfile } from '../hooks/useProfile';
 
 const PersonalSidebar = () => {
   const navigate = useNavigate();
 
-  const { user, profile, logout } = useAuth();
+  const { user, logout } = useAuth();
+  const { profile } = useProfile();
 
   const handleLogin = () => {
     navigate('/login');
@@ -26,7 +27,7 @@ const handleLogout = async () => {
         <div className="flex flex-col items-center">
           <img
  src={
-    user?.user_metadata?.avatar_url ||
+    profile?.user?.user_metadata?.avatar_url ||
     `https://api.dicebear.com/7.x/initials/svg?seed=${user?.email || 'User'}`
   }
             alt="Profile"
@@ -34,11 +35,11 @@ const handleLogout = async () => {
           />
 
           <h2 className="text-lg font-semibold">
-            {profile?.first_name} {profile?.last_name}
+            {profile?.profile?.first_name} {profile?.profile?.last_name}
           </h2>
 
           <p className="text-sm text-gray-400">
-            {user?.email}
+            {profile?.user?.email}
           </p>
 
           <div className="mt-4 w-full space-y-2">

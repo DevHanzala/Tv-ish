@@ -5,6 +5,7 @@ import React, {
   useCallback,
 } from "react";
 import * as authApi from "../api/auth.api";
+import * as profileApi from "../api/profile.api";
 import { supabase } from "../config/supabase";
 
 export const AuthContext = createContext(null);
@@ -14,59 +15,85 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);        // auth identity
   const [profile, setProfile] = useState(null);  // profile / channel data
   const [loading, setLoading] = useState(true);
-  
+
 
 
   /* ===================== AUTH STATE SYNC ===================== */
 
+  useEffect(() => {
+    if (!user) return;
+
+    const sync = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      await profileApi.ensureProfile();
+    };
+    sync();
+  }, [user]);
 
 
-useEffect(() => {
-  console.log("🧠 AUTH CONTEXT STATE:", { user, loading });
-}, [user, loading]);
+  useEffect(() => {
+    console.log("🧠 AUTH CONTEXT STATE:", { user, loading });
+  }, [user, loading]);
 
 
 
-// Fetch profile when user changes  
-useEffect(() => {
-  if (!user) {
-    return;
-  }
-
-  const fetchProfile = async () => {
-    try {
-      const res = await authApi.getMe();
-      setProfile(res.data.data.profile || null);
-    } catch {
-      setProfile(null);
+  // Fetch profile when user changes  
+  useEffect(() => {
+    if (!user) {
+      return;
     }
-  };
-
-  fetchProfile();
-}, [user]);
-
-
-// Listen to auth state changes
-useEffect(() => {
-  const { data: subscription } = supabase.auth.onAuthStateChange(
-    (event, session) => {
-      console.log("AUTH EVENT:", event);
-
-      if (!session) {
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-        return;
+    const fetchProfile = async () => {
+      try {
+        const res = await authApi.getMe();
+        setProfile(res.data.data.profile || null);
+      } catch (err) {
+        if (err.response?.status === 401) {
+          await supabase.auth.signOut({ scope: "local" })
+          setUser(null)
+          setProfile(null)
+          return
+        }
       }
+    };
+    fetchProfile();
+  }, [user]);
 
-      //  set user
-      setUser(session.user);
-      setLoading(false);
-    }
-  );
 
-  return () => subscription.subscription.unsubscribe();
-}, []);
+  // Listen to auth state changes
+  useEffect(() => {
+    const { data: subscription } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("AUTH EVENT:", event);
+
+        // Sync email on user update
+        if (event === "USER_UPDATED" && session) {
+          profileApi.syncEmail();
+          refreshProfile();
+        }
+
+        // Handle sign out
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          setIsAuthenticated(false);
+        }
+
+        if (!session) {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        //  set user
+        setUser(session.user);
+        setLoading(false);
+      }
+    );
+
+    return () => subscription.subscription.unsubscribe();
+  }, []);
 
 
   /* ===================== SIGNUP (OTP FLOW) ===================== */
@@ -76,45 +103,45 @@ useEffect(() => {
     return authApi.signupSendOtp({ email, password });
   }, []);
 
- // Verify OTP + set password 
-const signupVerifyOtp = useCallback(async (payload) => {
-  const res = await authApi.signupVerifyOtp(payload);
+  // Verify OTP + set password 
+  const signupVerifyOtp = useCallback(async (payload) => {
+    const res = await authApi.signupVerifyOtp(payload);
 
-  const { session, user, profile } = res.data.data;
-  
-  if (!session?.access_token || !session?.refresh_token) {
-    throw new Error("Session missing after OTP verification");
-  }
+    const { session, user, profile } = res.data.data;
 
-  // 🔑 CRITICAL
-  await supabase.auth.setSession({
-    access_token: session.access_token,
-    refresh_token: session.refresh_token,
-  });
+    if (!session?.access_token || !session?.refresh_token) {
+      throw new Error("Session missing after OTP verification");
+    }
 
-  return res;
-}, []);
-
-
-  /* ===================== LOGIN ===================== */
-  const login = useCallback(async (payload) => {
-  const res = await authApi.login(payload);
-  const { user, session, profile } = res.data.data;
-
-  if (session?.access_token && session?.refresh_token) {
-    // Set the session in the frontend Supabase client
+    // 🔑 CRITICAL
     await supabase.auth.setSession({
       access_token: session.access_token,
       refresh_token: session.refresh_token,
     });
-  }
 
-  // Update state
-  setUser(user);
-  setProfile(profile || null);
-  setLoading(false);
-  return res;
-}, []);
+    return res;
+  }, []);
+
+
+  /* ===================== LOGIN ===================== */
+  const login = useCallback(async (payload) => {
+    const res = await authApi.login(payload);
+    const { user, session, profile } = res.data.data;
+
+    if (session?.access_token && session?.refresh_token) {
+      // Set the session in the frontend Supabase client
+      await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+    }
+
+    // Update state
+    setUser(user);
+    setProfile(profile || null);
+    setLoading(false);
+    return res;
+  }, []);
 
 
   /* ===================== SOCIAL LOGIN ===================== */
@@ -148,9 +175,9 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   /* ===================== LOGOUT ===================== */
   const logout = useCallback(async () => {
-    await supabase.auth.signOut(); 
+    await supabase.auth.signOut();
     setUser(null);
-    setProfile(null); 
+    setProfile(null);
   }, []);
 
 
@@ -159,10 +186,10 @@ const signupVerifyOtp = useCallback(async (payload) => {
 
   const refreshProfile = useCallback(async () => {
     const res = await authApi.getMe();
- const { user, profile } = res.data.data;
+    const { user, profile } = res.data.data;
 
-setUser(user);
-setProfile(profile);
+    setUser(user);
+    setProfile(profile);
 
     setLoading(false);
   }, []);
@@ -193,6 +220,8 @@ setProfile(profile);
 
         /* logout */
         logout,
+
+        refreshProfile,
       }}
     >
       {children}

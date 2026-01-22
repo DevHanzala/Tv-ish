@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
 import { useProfile } from "../hooks/useProfile";
 
-
 const NameEdit = () => {
   const navigate = useNavigate();
 const { profile, updateProfile, loading } = useProfile();
@@ -12,15 +11,26 @@ const [name, setName] = useState("");
 if (loading) return null;
 
 useEffect(() => {
-  if (profile?.name && !name) {
-    setName(profile.name);
+  const first = profile?.profile?.first_name || "";
+  const last = profile?.profile?.last_name || "";
+
+  if (!name && (first || last)) {
+    setName(`${first} ${last}`.trim());
   }
-}, [profile, name]);
+}, [profile]);
+
 
 
 const handleSave = async () => {
   if (!name.trim()) return;
-  await updateProfile({ name: name.trim() });
+
+  const parts = name.trim().split(" ");
+  const first_name = parts.shift();
+  const last_name = parts.join(" "); // supports middle names
+  await updateProfile({
+    first_name,
+    last_name,
+  });
   navigate(-1);
 };
 

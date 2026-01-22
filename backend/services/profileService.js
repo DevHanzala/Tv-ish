@@ -5,97 +5,81 @@ import {
   updateProfileByUserId,
 } from "../models/profile.model.js";
 
-// Helper to extract first and last names from user metadata
-const extractNamesFromMetadata = (metadata = {}) => {
-  if (metadata.given_name || metadata.family_name) {
-    return {
-      firstName: metadata.given_name || null,
-      lastName: metadata.family_name || null,
-    };
+// Service: ensure profile exists
+export const ensureProfile = async (user) => {
+  if (!user) {
+    throw new HttpError("Unauthorized", 401);
   }
 
-  if (metadata.full_name) {
-    const parts = metadata.full_name.trim().split(" ");
-    return {
-      firstName: parts[0] || null,
-      lastName: parts.length > 1 ? parts.slice(1).join(" ") : null,
-    };
+  const userId = user.id;
+
+  // 1️⃣ Try to read profile
+  const { data, error } = await getProfileByUserId(userId);
+
+  if (data) {
+    return data;
   }
 
-  return { firstName: null, lastName: null };
-};
+  // ❗ If error but not "row not found", throw
+  if (error && error.code !== "PGRST116") {
+    throw new HttpError("Error checking existing profile", 500);
+  }
 
-// Helper to create a new profile
-const createProfile = async ({ userId, email, firstName, lastName }) => {
-  const { data, error } = await supabaseAdmin
+  // 2️⃣ Extract names from metadata
+  const metadata = user.user_metadata || {};
+
+  const firstName =
+    metadata.given_name ||
+    metadata.first_name ||
+    metadata.full_name?.split(" ")[0] ||
+    null;
+
+  const lastName =
+    metadata.family_name ||
+    metadata.last_name ||
+    (metadata.full_name
+      ? metadata.full_name.split(" ").slice(1).join(" ")
+      : null);
+
+  // 3️⃣ Create profile
+  const { data: created, error: createError } = await supabaseAdmin
     .from("profiles")
     .insert({
       user_id: userId,
-      email,
+      email: user.email,
       first_name: firstName,
       last_name: lastName,
     })
     .select()
     .single();
 
-  if (error) {
+  if (createError) {
     throw new HttpError("Profile creation failed", 500);
   }
 
-  return data;
+  return created;
 };
 
-// Helper to patch missing names in existing profile
-const patchMissingNames = async (profile, userId, firstName, lastName) => {
-  if (!profile.first_name && firstName) {
-    await supabaseAdmin
-      .from("profiles")
-      .update({
-        first_name: firstName,
-        last_name: profile.last_name || lastName,
-      })
-      .eq("user_id", userId);
 
-    return {
-      ...profile,
-      first_name: firstName,
-      last_name: profile.last_name || lastName,
-    };
-  }
-
-  return profile;
-};
-
-// Service: get or create profile
-export const getOrCreateProfile = async (user) => {
+// Service: get my profile
+export const getMyProfile = async (user) => {
   if (!user) {
     throw new HttpError("Unauthorized", 401);
   }
 
-  const userId = user.id;
-  const { firstName, lastName } = extractNamesFromMetadata(
-    user.user_metadata
-  );
+  const { data, error } = await getProfileByUserId(user.id);
 
-  let profile = await getProfileByUserId(userId);
-
-  if (!profile) {
-    profile = await createProfile({
-      userId,
-      email: user.email,
-      firstName,
-      lastName,
-    });
+  if (error) {
+    return {
+      user,
+      profile: null,
+    };
   }
 
-  profile = await patchMissingNames(
-    profile,
-    userId,
-    firstName,
-    lastName
-  );
-
-  return { user, profile };
+  return {
+    user,
+    profile: data,
+  };
 };
 
 
@@ -111,18 +95,42 @@ export const updateProfile = async (userId, payload) => {
 
 // Service: request email change
 export const requestEmailChange = async (userId, email) => {
-  if (!email) throw new HttpError("Email is required", 400);
+  if (!email) {
+    throw new HttpError("Email is required", 400);
+  }
 
-  const { error } = await supabase.auth.admin.updateUserById(userId, { email });
-  if (error) throw new HttpError(error.message, 400);
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    email,
+  });
 
-  return true;
+  if (error) {
+    throw new HttpError(error.message, 400);
+  }
+
+  // 🔑 SYNC PROFILE EMAIL IMMEDIATELY
+  await updateProfileByUserId(userId, { email });
 };
+
+
+// Service: sync email
+export const syncEmail = async (userId, email) => {
+  if (!email) {
+    throw new HttpError("Email missing", 400);
+  }
+
+  const { data, error } = await updateProfileByUserId(userId, { email });
+  if (error) {
+    throw new HttpError(error.message, 400);
+  }
+
+  return data;
+};
+
+
 
 // Service: update phone number
 export const updatePhone = async (userId, phone) => {
   if (!phone) throw new HttpError("Phone is required", 400);
-
   const { data, error } = await updateProfileByUserId(userId, { phone });
   if (error) throw new HttpError(error.message, 400);
 

@@ -1,55 +1,53 @@
-import  { useState } from "react";
+import { useState } from "react";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useProfile } from "../hooks/useProfile";
-
+import { supabase } from "../config/supabase";
+import { useNavigate } from "react-router-dom";
 
 const ChangePassword = () => {
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
 
-const { changePassword } = useProfile();
+  const { changePassword } = useProfile();
 
 
-  const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
   const [logoutOtherDevices, setLogoutOtherDevices] = useState(true);
 
- const handleChangePassword = async () => {
-  setError("");
-
-  if (!currentPassword || !newPassword) {
-    setError("All fields are required.");
-    return;
-  }
-
-  if (newPassword !== confirmPassword) {
-    setError("Passwords do not match.");
-    return;
-  }
-
-  try {
-    setLoading(true);
-    await changePassword({
-      currentPassword,
-      newPassword,
-      logoutOthers: logoutOtherDevices,
-    });
-
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-  } catch (err) {
-    setError(err.response?.data?.message || "Password update failed.");
-  } finally {
-    setLoading(false);
-  }
-};
+  const handleChangePassword = async () => {
+    setError("");
+    if (!newPassword || !confirmPassword) {
+      setError("All fields are required.");
+      return;
+    }
+    try {
+      setLoading(true);
+      await changePassword({
+        newPassword,
+        logoutOthers: logoutOtherDevices,
+      });
+      supabase.auth.signOut()
+      localStorage.clear()
+      sessionStorage.clear()
+      navigate("/login", { replace: true });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      if (err?.response?.status >= 500) {
+        setError("Unexpected server error. Please try again.");
+      }
+    }
+    finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -82,17 +80,7 @@ const { changePassword } = useProfile();
 
         {/* Inputs with eye toggle */}
         <div className="space-y-4">
-          <div className="relative w-1/2">
-            <input
-              type={showCurrent ? "text" : "password"}
-              placeholder="Current password (Updated 02/04/2025)"
-              className="w-full bg-[#1f1f1f] border border-gray-700 text-xs text-white placeholder-gray-500 px-3 py-2 rounded-md focus:outline-none focus:border-blue-500 pr-10"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-            />
-            {renderEyeIcon(showCurrent, () => setShowCurrent(!showCurrent))}
-          </div>
-          
+
 
           <div className="relative w-1/2">
             <input
@@ -135,13 +123,13 @@ const { changePassword } = useProfile();
         </label>
 
         {/* Updated Submit Button */}
-   <button
-  disabled={loading}
-  onClick={handleChangePassword}
-  className="mt-10 w-full bg-red-600 py-3 rounded-full disabled:opacity-60"
->
-  {loading ? "Updating..." : "Change password"}
-</button>
+        <button
+          disabled={loading}
+          onClick={handleChangePassword}
+          className="mt-10 w-full bg-red-600 py-3 rounded-full disabled:opacity-60"
+        >
+          {loading ? "Updating..." : "Change password"}
+        </button>
 
 
       </div>

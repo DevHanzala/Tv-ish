@@ -30,6 +30,8 @@ api.interceptors.request.use(async (config) => {
     "/auth/forgot-password/reset",
   ];
 
+  
+
   if (publicRoutes.some((route) => config.url?.startsWith(route))) {
     return config;
   }
