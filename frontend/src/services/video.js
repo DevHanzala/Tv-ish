@@ -47,4 +47,5 @@ export const uploadVideo = async (userId, file) => {
     if (updateError) {
         throw new Error(updateError.message || "Error updating video record with file path");
     }
+    return videoId;
 };
