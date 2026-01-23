@@ -46,30 +46,25 @@ export default function UploadVideos() {
 
     try {
       // Upload video file
-      await uploadVideo(user.id, files[0]);
+     const videoId = await uploadVideo(user.id, files[0]);
+     // close modal 
+     setOpen(false);
+     // mark upload complete
+     setUploading(false);
+     // set completed
+     setCompleted(true);
+     // Navigate to next step with videoId
+     navigate(`/uploadvideos2/${videoId}`);
     } 
     catch(err){
       console.log("Error occured while creating or uploading video"); 
       console.log(err);
     }
-
-    let percent = 0;
-    const interval = setInterval(() => {
-      percent += 5;
-      setProgress(percent);
-      if (percent >= 100) {
-        clearInterval(interval);
-        setUploading(false);
-        setCompleted(true);
-      }
-    }, 150);
   };
 
   // ✅ Navigate to uploadvideos2.jsx after upload complete
   const handleNext = () => {
-    setOpen(false);
     setTimeout(() => {
-      navigate("/uploadvideos2");
     }, 250);
   };
 
