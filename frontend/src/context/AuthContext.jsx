@@ -76,7 +76,6 @@ export const AuthProvider = ({ children }) => {
         // Handle sign out
         if (event === "SIGNED_OUT") {
           setUser(null);
-          setIsAuthenticated(false);
         }
 
         if (!session) {
@@ -107,7 +106,7 @@ export const AuthProvider = ({ children }) => {
   const signupVerifyOtp = useCallback(async (payload) => {
     const res = await authApi.signupVerifyOtp(payload);
 
-    const { session, user, profile } = res.data.data;
+    const { session } = res.data.data;
 
     if (!session?.access_token || !session?.refresh_token) {
       throw new Error("Session missing after OTP verification");
@@ -203,7 +202,7 @@ export const AuthProvider = ({ children }) => {
         user,
         profile,
         loading,
-        isAuthenticated: !!user,
+       isAuthenticated: Boolean(user),
 
         /* signup */
         signupSendOtp,
