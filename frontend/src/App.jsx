@@ -281,10 +281,10 @@ function App() {
 
               {/* Upload */}
               <Route path="/uploadvideos" element={<AuthGuard><UploadVideos /></AuthGuard>} />
-              <Route path="/uploadvideos2" element={<AuthGuard><UploadVideos2 /></AuthGuard>} />
-              <Route path="/uploadvideos3" element={<AuthGuard><UploadVideos3 /></AuthGuard>} />
-              <Route path="/uploadvideos4" element={<AuthGuard><UploadVideos4 /></AuthGuard>} />
-              <Route path="/uploadvideos5" element={<AuthGuard><UploadVideos5 /></AuthGuard>} />
+              <Route path="/uploadvideos2/:videoId" element={<AuthGuard><UploadVideos2 /></AuthGuard>} />
+              <Route path="/uploadvideos3/:videoId" element={<AuthGuard><UploadVideos3 /></AuthGuard>} />
+              <Route path="/uploadvideos4/:videoId" element={<AuthGuard><UploadVideos4 /></AuthGuard>} />
+              <Route path="/uploadvideos5/:videoId" element={<AuthGuard><UploadVideos5 /></AuthGuard>} />
               <Route path="/Monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
               <Route path="/notification" element={<AuthGuard><Notification /></AuthGuard>} />
               <Route path="/AI" element={<AuthGuard><AI /></AuthGuard>} />
