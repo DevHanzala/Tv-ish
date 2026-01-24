@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, percent } from "framer-motion";
 import { X, Upload, CheckCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { uploadVideo } from "../services/video.js"
@@ -46,7 +46,9 @@ export default function UploadVideos() {
 
     try {
       // Upload video file
-     const videoId = await uploadVideo(user.id, files[0]);
+     const videoId = await uploadVideo(user.id, files[0], (percent)=>{
+        setProgress(percent);
+     });
      // close modal 
      setOpen(false);
      // mark upload complete
