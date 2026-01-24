@@ -32,13 +32,6 @@ export const AuthProvider = ({ children }) => {
     sync();
   }, [user]);
 
-
-  useEffect(() => {
-    console.log("🧠 AUTH CONTEXT STATE:", { user, loading });
-  }, [user, loading]);
-
-
-
   // Fetch profile when user changes  
   useEffect(() => {
     if (!user) {
