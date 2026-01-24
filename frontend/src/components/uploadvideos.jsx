@@ -64,12 +64,6 @@ export default function UploadVideos() {
     }
   };
 
-  // ✅ Navigate to uploadvideos2.jsx after upload complete
-  const handleNext = () => {
-    setTimeout(() => {
-    }, 250);
-  };
-
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-black text-white">
       {/* Hidden File Input */}
