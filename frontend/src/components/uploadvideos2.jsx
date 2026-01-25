@@ -11,7 +11,7 @@ export default function UploadVideos2() {
   const location = useLocation();
 
   // ⬅️ GET CONTEXT FIELDS
-  const { uploadData, updateField, resetUploadData } = useUpload();
+  const { uploadData, updateField, finalizeUpload, resetUploadData, loading } = useUpload();
 
   // OPEN MODAL
   const [open, setOpen] = useState(false);
@@ -20,8 +20,15 @@ export default function UploadVideos2() {
   const [albumsList, setAlbumsList] = useState([]);
 
   // Captions UI state (local mirrors context.captions which is an array)
-  const [captions, setCaptions] = useState(uploadData.captions || []);
+  const [captions, setCaptions] = useState(uploadData?.captions || []);
   const fileInputRef = useRef(null);
+
+  useEffect(() => {
+  if (uploadData?.captions) {
+    setCaptions(uploadData.captions);
+  }
+}, [uploadData]);
+
 
   useEffect(() => {
     setOpen(true);
@@ -96,34 +103,37 @@ export default function UploadVideos2() {
   };
 
   // HANDLE CLOSE (SAVE DRAFT + RESET CONTEXT)
-  const handleClose = () => {
-    const draftData = {
-      ...uploadData,
-      captions,
-      savedAt: new Date().toISOString(),
-      status: "draft",
-    };
+  const handleClose = async () => {
+    const dataToSave = { ...uploadData}
+    delete dataToSave.captions; 
+    const updateData = await finalizeUpload();
+    // const draftData = {
+    //   ...uploadData,
+    //   captions,
+    //   savedAt: new Date().toISOString(),
+    //   status: "draft",
+    // };
 
-    localStorage.setItem("videoDraft", JSON.stringify(draftData));
+    // localStorage.setItem("videoDraft", JSON.stringify(draftData));
 
     // Save album if new
-    if (
-      uploadData.uploadType === "Music" &&
-      uploadData.album &&
-      !albumsList.includes(uploadData.album)
-    ) {
-      const updatedAlbums = [...albumsList, uploadData.album];
-      setAlbumsList(updatedAlbums);
-      localStorage.setItem("albumsList", JSON.stringify(updatedAlbums));
-    }
-
-    // RESET context when modal closes
+    // if (
+    //   uploadData.uploadType === "Music" &&
+    //   uploadData.album &&
+    //   !albumsList.includes(uploadData.album)
+    // ) {
+    //   const updatedAlbums = [...albumsList, uploadData.album];
+    //   setAlbumsList(updatedAlbums);
+    //   localStorage.setItem("albumsList", JSON.stringify(updatedAlbums));
+    // 
+    if(updateData){
+      console.log("data updated");
+      
+ // RESET context when modal closes
     resetUploadData();
-
+    }
+    navigate("/");
     setOpen(false);
-    setTimeout(() => {
-      navigate("/my-videos");
-    }, 250);
   };
 
   const steps = [
@@ -151,6 +161,11 @@ export default function UploadVideos2() {
     else if (step === 4) navigate("/uploadvideos5");
     else if (step === 5) navigate("/monetization");
   };
+
+  if (loading) {
+    return <>Loading...</>
+  }
+
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-black text-white">
@@ -235,7 +250,7 @@ export default function UploadVideos2() {
                   <input
                     type="text"
                     placeholder="Enter project title"
-                    value={uploadData.title}
+                    value={uploadData.title || ""}
                     onChange={(e) => updateField("title", e.target.value)}
                     className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                   />
@@ -246,7 +261,7 @@ export default function UploadVideos2() {
                   <label className="text-sm text-gray-300">Description</label>
                   <textarea
                     placeholder="Provide a brief description of your project"
-                    value={uploadData.description}
+                    value={uploadData.description || ""}
                     onChange={(e) => updateField("description", e.target.value)}
                     className="w-full h-24 bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm resize-none mt-1"
                   />
