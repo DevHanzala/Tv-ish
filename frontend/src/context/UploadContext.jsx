@@ -7,71 +7,83 @@ const UploadContext = createContext();
 
 export const UploadProvider = ({ children }) => {
   const { videoId } = useParams(); // get videoId from URL
-  const [uploadData, setUploadData] = useState(null);
-
+  const [uploadData, setUploadData] = useState({
+    title: "",
+    description: "",
+    category: "",
+  });
   const [loading, setLoading] = useState(true);
 
-  // Load draft from Supabase
+  // Fetch minimal video details (title, description, category) and user captions
   useEffect(() => {
-    
     if (!videoId) return;
 
-    const fetchDraft = async () => {
+    const fetchVideoDetails = async () => {
       setLoading(true);
-      const { data, error } = await supabase
+
+      // Fetch video details
+      const { data: videoData, error: videoError } = await supabase
         .from("videos")
-        .select("*")
+        .select("title, description, category")
         .eq("id", videoId)
         .single();
 
-      if (data) {
-        setUploadData(data);
-        console.log("Video Draft: " , data);
-        localStorage.setItem("upload-temp-data", JSON.stringify(data));
+      if (videoError) {
+        console.error("Failed to fetch video details:", videoError);
+        setLoading(false);
+        return;
       }
+
+      // Fetch captions for this video
+      const { data: captionsData, error: captionsError } = await supabase
+        .from("captions")
+        .select("id, filename")
+        .eq("video_id", videoId);
+
+      if (captionsError) {
+        console.error("Failed to fetch captions:", captionsError);
+      }
+
+      // Set uploadData state including captions
+      setUploadData({
+        title: videoData.title || "",
+        description: videoData.description || "",
+        category: videoData.category || "",
+        captions: captionsData || [], // store captions array
+      });
+
       setLoading(false);
-
-      if (error) console.error("Failed to fetch video draft:", error);
     };
-
-    fetchDraft();
+    console.log(uploadData);
+    fetchVideoDetails();
   }, [videoId]);
 
-  // Auto-save to localStorage on every change
-  useEffect(() => {
-    localStorage.setItem("upload-temp-data", JSON.stringify(uploadData));
-  }, [uploadData]);
 
   // Update a single field in context
   const updateField = (field, value) => {
-    if (field === "legalDoc" && value instanceof File) {
-      const fileMeta = { name: value.name, type: value.type };
-      setUploadData((prev) => ({ ...prev, [field]: fileMeta }));
-    } else {
-      setUploadData((prev) => ({ ...prev, [field]: value }));
-    }
+    if (!["title", "description", "category"].includes(field)) return;
+    setUploadData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Final save to Supabase and clear localStorage
-  const finalizeUpload = async () => {
-    if (!videoId) return;
+  // Update video details in Supabase
+  const updateVideoDetails = async () => {
+    if (!videoId) return false;
+
+    // Extract only the fields we want to update
+    const { title, description, category } = uploadData;
+    const updatePayload = { title, description, category };
 
     const { error } = await supabase
       .from("videos")
-      .update(uploadData)
+      .update(updatePayload)
       .eq("id", videoId);
 
     if (error) {
-      console.error("Failed to finalize upload:", error);
+      console.error("Failed to update video details:", error);
       return false;
     }
 
-    localStorage.removeItem("upload-temp-data");
     return true;
-  };
-
-  const resetUploadData = () => {
-    localStorage.removeItem("upload-temp-data");
   };
 
   return (
@@ -79,8 +91,7 @@ export const UploadProvider = ({ children }) => {
       value={{
         uploadData,
         updateField,
-        resetUploadData,
-        finalizeUpload,
+        updateVideoDetails,
         loading,
       }}
     >
