@@ -54,9 +54,13 @@ export const UploadProvider = ({ children }) => {
 
       setLoading(false);
     };
-    console.log(uploadData);
     fetchVideoDetails();
   }, [videoId]);
+
+  // Log uploadData changes for debugging
+  useEffect(() => {
+    console.log("Updated uploadData:", uploadData);
+  }, [uploadData]);
 
 
   // Update a single field in context
