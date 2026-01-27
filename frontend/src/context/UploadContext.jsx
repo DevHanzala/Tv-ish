@@ -71,27 +71,6 @@ export const UploadProvider = ({ children }) => {
     }));
   };
 
-  // Update video details in Supabase
-  const updateVideoDetails = async () => {
-    if (!videoId) return false;
-
-    // Extract only the fields we want to update
-    const { title, description, category } = uploadData;
-    const updatePayload = { title, description, category };
-
-    const { error } = await supabase
-      .from("videos")
-      .update(updatePayload)
-      .eq("id", videoId);
-
-    if (error) {
-      console.error("Failed to update video details:", error);
-      return false;
-    }
-
-    return true;
-  };
-
   return (
     <UploadContext.Provider
       value={{
