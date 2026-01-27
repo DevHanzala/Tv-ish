@@ -1,15 +1,11 @@
 import { supabase } from "../config/supabase";
-import { useAuth } from "../hooks/useAuth";
 
-const {user} = useAuth();
-
-export const fetchUserAlbums = async () => {
-    const session = await getAuthSession();
+export const getAlbums = async (userId) => {
   const { data, error } = await supabase
     .from("albums")
     .select("*")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false }); // optional: latest first
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Failed to fetch user albums:", error);

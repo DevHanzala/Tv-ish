@@ -1,14 +1,11 @@
-import { supabase } from "../config/supabase.js";
-import { useAuth } from "../hooks/useAuth";
+import { supabase } from "../config/supabase.js";;
 
-const { user } = useAuth();
-
-export const getShows = async () => {
+export const getShows = async (userId) => {
   const { data, error } = await supabase
     .from("shows")
     .select("id, title")
-    .eq("owner_id", user.id)
-    .order("created_at", { ascending: false });
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: true });
 
   if (error) {
     console.error("Failed to fetch shows:", error);
