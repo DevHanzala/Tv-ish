@@ -8,6 +8,7 @@ const UploadContext = createContext();
 export const UploadProvider = ({ children }) => {
   const { videoId } = useParams(); // get videoId from URL
   const [uploadData, setUploadData] = useState({
+    videoId: "",
     title: "",
     description: "",
     category: "",
@@ -24,7 +25,7 @@ export const UploadProvider = ({ children }) => {
       // Fetch video details
       const { data: videoData, error: videoError } = await supabase
         .from("videos")
-        .select("title, description, category")
+        .select("title, description, category, id")
         .eq("id", videoId)
         .single();
 
@@ -46,6 +47,7 @@ export const UploadProvider = ({ children }) => {
 
       // Set uploadData state including captions
       setUploadData({
+        videoId: videoData.id,
         title: videoData.title || "",
         description: videoData.description || "",
         category: videoData.category || "",
