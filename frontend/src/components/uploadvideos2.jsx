@@ -2,140 +2,89 @@ import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
-
-// ⬅️ CONTEXT IMPORT
 import { useUpload } from "../context/UploadContext";
+import { getShows } from "../services/show";
+import { getAlbums } from "../services/album";
+import { useAuth } from "../hooks/useAuth";
 
 export default function UploadVideos2() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
 
-  // ⬅️ GET CONTEXT FIELDS
-  const { uploadData, updateField, finalizeUpload, resetUploadData, loading } = useUpload();
+  // Get Context Fields
+  const { uploadData, updateField, loading } = useUpload();
+
+  const [shows, setShows] = useState([]);
+  const [creatingNewShow, setCreatingNewShow] = useState(false);
+
+  const [albums, setAlbums] = useState([]);
+  const [creatingNewAlbum, setCreatingNewAlbum] = useState(false);
+
+  const [selectedLanguage, setSelectedLanguage] = useState("und");
 
   // OPEN MODAL
-  const [open, setOpen] = useState(false);
-
-  // Load albums separately (NOT inside context)
-  const [albumsList, setAlbumsList] = useState([]);
+  const [open, setOpen] = useState(true);
 
   // Captions UI state (local mirrors context.captions which is an array)
-  const [captions, setCaptions] = useState(uploadData?.captions || []);
+  const [captions, setCaptions] = useState(uploadData.captions || []);
   const fileInputRef = useRef(null);
 
+  // Fetch shows from Supabase
   useEffect(() => {
-  if (uploadData?.captions) {
-    setCaptions(uploadData.captions);
-  }
-}, [uploadData]);
-
-
-  useEffect(() => {
-    setOpen(true);
-    const storedAlbums = JSON.parse(localStorage.getItem("albumsList") || "[]");
-    setAlbumsList(storedAlbums);
+    fetchShows();
   }, []);
 
-  // Keep context in sync (auto-save)
+  // Fetch albums from Supabase
   useEffect(() => {
-    updateField("captions", captions);
-  }, [captions]);
+    fetchAlbums();
+  }, []);
 
-  // Helper to generate simple IDs for captions
-  const genId = () => `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  // Fetch all shows
+  const fetchShows = async () => {
+    const shows = await getShows(user.id);
+    setShows(shows);
+  }
 
-  // Add captions from FileList (supports multiple)
-  const addCaptionFiles = (fileList, language = "und", label = "") => {
+  // Fetch all albums
+  const fetchAlbums = async () => {
+    const albums = await getAlbums(user.id);
+    setAlbums(albums);
+  };
+
+  const addCaptionFiles = (fileList, language = "und") => {
     if (!fileList || fileList.length === 0) return;
+    const file = fileList[0]; // only take first file per language
+    const newCaption = {
+      language,              // KEY
+      fileName: file.name,  // DB field
+      filePath: "",         // fill after upload
+      fileObject: file,    // temporary, frontend only
+    };
 
-    const filesArray = Array.from(fileList);
-    const newCaptions = filesArray.map((file) => ({
-      id: genId(),
-      language: language, // language code or label
-      label: label || file.name.split(".").slice(0, -1).join(".") || file.name,
-      fileName: file.name,
-      size: file.size,
-      type: file.type,
-      fileObject: file,
-      uploadedAt: new Date().toISOString(),
-    }));
-
-    // Append and save
-    setCaptions((prev) => [...prev, ...newCaptions]);
+    setCaptions((prev) => {
+      // remove existing caption for same language
+      const filtered = prev.filter((c) => c.language !== language);
+      return [...filtered, newCaption];
+    });
   };
 
   const removeCaption = (id) => {
     setCaptions((prev) => prev.filter((c) => c.id !== id));
   };
 
+  // Handle file input
   const handleFileInputChange = (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    // If user selected multiple files, treat them as individual captions with default language 'und'
-    addCaptionFiles(files, "und", "");
-
-    // reset input so same file can be re-picked if needed
+    addCaptionFiles(e.target.files, selectedLanguage, "");
     e.target.value = "";
   };
 
-  // UI flow helpers — open file picker with a selected language & optional label prefilled
-  const openFilePickerForLanguage = (language, label = "") => {
-    // store a temporary attribute on the input element so we know which language to apply
-    if (!fileInputRef.current) return;
-    fileInputRef.current.dataset.lang = language;
-    fileInputRef.current.dataset.lbl = label;
-    fileInputRef.current.click();
-  };
-
-  // Enhanced handler that reads dataset to attach language/label to each file
-  const handleFileInputChangeWithMeta = (e) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const lang = e.target.dataset.lang || "und";
-    const lbl = e.target.dataset.lbl || "";
-
-    addCaptionFiles(files, lang, lbl);
-    e.target.value = "";
-    delete e.target.dataset.lang;
-    delete e.target.dataset.lbl;
-  };
-
-  // HANDLE CLOSE (SAVE DRAFT + RESET CONTEXT)
+  //TODO: to update data into supabase
   const handleClose = async () => {
-    const dataToSave = { ...uploadData}
-    delete dataToSave.captions; 
-    const updateData = await finalizeUpload();
-    // const draftData = {
-    //   ...uploadData,
-    //   captions,
-    //   savedAt: new Date().toISOString(),
-    //   status: "draft",
-    // };
-
-    // localStorage.setItem("videoDraft", JSON.stringify(draftData));
-
-    // Save album if new
-    // if (
-    //   uploadData.uploadType === "Music" &&
-    //   uploadData.album &&
-    //   !albumsList.includes(uploadData.album)
-    // ) {
-    //   const updatedAlbums = [...albumsList, uploadData.album];
-    //   setAlbumsList(updatedAlbums);
-    //   localStorage.setItem("albumsList", JSON.stringify(updatedAlbums));
-    // 
-    if(updateData){
-      console.log("data updated");
-      
- // RESET context when modal closes
-    resetUploadData();
-    }
-    navigate("/");
-    setOpen(false);
   };
 
+
+  // Progress Bar Steps
   const steps = [
     { id: 1, label: "Details" },
     { id: 2, label: "Profile" },
@@ -154,6 +103,7 @@ export default function UploadVideos2() {
 
   const currentStep = getCurrentStep();
 
+  // TODO: to update the data to supabase
   const handleStepClick = (step) => {
     if (step === 1) navigate("/uploadvideos2");
     else if (step === 2) navigate("/uploadvideos3");
@@ -212,26 +162,23 @@ export default function UploadVideos2() {
                       <div
                         key={step.id}
                         onClick={() => handleStepClick(step.id)}
-                        className={`relative z-10 flex flex-col items-center cursor-pointer transition hover:scale-105 ${
-                          step.id > currentStep ? "opacity-60" : ""
-                        }`}
+                        className={`relative z-10 flex flex-col items-center cursor-pointer transition hover:scale-105 ${step.id > currentStep ? "opacity-60" : ""
+                          }`}
                       >
                         <div
-                          className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${
-                            isCompleted
-                              ? "bg-white border-white text-black"
-                              : isActive
+                          className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${isCompleted
+                            ? "bg-white border-white text-black"
+                            : isActive
                               ? "bg-blue-600 border-blue-600 text-white"
                               : "bg-black border-gray-400"
-                          }`}
+                            }`}
                         >
                           {isCompleted ? (
                             <CheckCircle size={18} className="text-black" />
                           ) : (
                             <div
-                              className={`w-3 h-3 rounded-full ${
-                                isActive ? "bg-white" : "bg-gray-400"
-                              }`}
+                              className={`w-3 h-3 rounded-full ${isActive ? "bg-white" : "bg-gray-400"
+                                }`}
                             />
                           )}
                         </div>
@@ -271,8 +218,12 @@ export default function UploadVideos2() {
                 <div>
                   <label className="text-sm text-gray-300">What’s being uploaded?</label>
                   <select
-                    value={uploadData.uploadType}
-                    onChange={(e) => updateField("uploadType", e.target.value)}
+                    value={uploadData.category}
+                    onChange={(e) => {
+                      updateField("category", e.target.value);
+                      setCreatingNewAlbum(false);
+                      setCreatingNewShow(false);
+                    }}
                     className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                   >
                     <option>Select type</option>
@@ -288,55 +239,146 @@ export default function UploadVideos2() {
                 </div>
 
                 {/* Shows → Season/Episode */}
-                {uploadData.uploadType === "Shows" && (
-                  <div className="space-y-4">
+                {uploadData.category === "Shows" && (
+                  <div className="space-y-6 border-t border-gray-700 pt-4">
+
+                    {/* Show Selection */}
                     <div>
-                      <label className="text-sm text-gray-300">Season</label>
-                      <input
-                        type="text"
-                        placeholder="Enter season number"
-                        value={uploadData.season}
-                        onChange={(e) => updateField("season", e.target.value)}
+                      <label className="text-sm text-gray-300">Select Show</label>
+                      <select
+                        value={uploadData.show_id || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "__new__") {
+                            setCreatingNewShow(true);
+                            updateField("show_id", "");
+                            updateField("showMode", "create");
+                          } else {
+                            setCreatingNewShow(false);
+                            updateField("show_id", val);
+                            updateField("showMode", "select");
+                          }
+                        }}
                         className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
-                      />
+                      >
+                        <option value="">-- Select a show --</option>
+                        {shows.map((show) => (
+                          <option key={show.id} value={show.id}>
+                            {show.title}
+                          </option>
+                        ))}
+                        <option value="__new__">+ Create new show</option>
+                      </select>
                     </div>
-                    <div>
-                      <label className="text-sm text-gray-300">Episode</label>
-                      <input
-                        type="text"
-                        placeholder="Enter episode number"
-                        value={uploadData.episode}
-                        onChange={(e) => updateField("episode", e.target.value)}
-                        className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
-                      />
+
+                    {/* Create New Show */}
+                    {creatingNewShow && (
+                      <div className="space-y-3 mt-3">
+                        <div>
+                          <label className="text-sm text-gray-300">New Show Title</label>
+                          <input
+                            type="text"
+                            value={uploadData.newShowTitle || ""}
+                            onChange={(e) => updateField("newShowTitle", e.target.value)}
+                            className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm text-gray-300">New Show Description</label>
+                          <textarea
+                            value={uploadData.newShowDescription || ""}
+                            onChange={(e) => updateField("newShowDescription", e.target.value)}
+                            className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm resize-none mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* SEASON / EPISODE */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm text-gray-300">Season</label>
+                        <input
+                          type="number"
+                          value={uploadData.season || ""}
+                          onChange={(e) => updateField("season", e.target.value)}
+                          className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm text-gray-300">Episode</label>
+                        <input
+                          type="number"
+                          value={uploadData.episode || ""}
+                          onChange={(e) => updateField("episode", e.target.value)}
+                          className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                        />
+                      </div>
                     </div>
+
                   </div>
                 )}
 
-                {/* Music → Album */}
-                {uploadData.uploadType === "Music" && (
-                  <div>
-                    <label className="text-sm text-gray-300">Album</label>
-                    <select
-                      value={uploadData.album}
-                      onChange={(e) => updateField("album", e.target.value)}
-                      className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
-                    >
-                      <option value="">Select or type album</option>
-                      {albumsList.map((alb, idx) => (
-                        <option key={idx} value={alb}>
-                          {alb}
-                        </option>
-                      ))}
-                    </select>
+                {/* Movies → Album */}
+                {uploadData.category === "Movies" && (
+                  <div className="space-y-6 border-t border-gray-700 pt-4">
 
-                    <input
-                      type="text"
-                      placeholder="Or type new album"
-                      value={uploadData.album}
-                      onChange={(e) => updateField("album", e.target.value)}
-                      className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
-                    />
+                    {/* Album Selection */}
+                    <div>
+                      <label className="text-sm text-gray-300">Select Album</label>
+                      <select
+                        value={uploadData.album_id || ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === "__new__") {
+                            setCreatingNewAlbum(true);
+                            updateField("album_id", ""); // reset selected album
+                            updateField("albumMode", "create");
+                          } else {
+                            setCreatingNewAlbum(false);
+                            updateField("album_id", val);
+                            updateField("albumMode", "select");
+                          }
+                        }}
+                        className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                      >
+                        <option value="">-- Select an album --</option>
+                        {albums.map((alb) => (
+                          <option key={alb.id} value={alb.id}>
+                            {alb.title}
+                          </option>
+                        ))}
+                        <option value="__new__">+ Create new album</option>
+                      </select>
+                    </div>
+
+                    {/* Create New Album */}
+                    {creatingNewAlbum && (
+                      <div className="space-y-3 mt-3">
+                        <div>
+                          <label className="text-sm text-gray-300">New Album Title</label>
+                          <input
+                            type="text"
+                            placeholder="Enter album title"
+                            value={uploadData.newAlbumTitle || ""}
+                            onChange={(e) => updateField("newAlbumTitle", e.target.value)}
+                            className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-sm text-gray-300">New Album Description</label>
+                          <textarea
+                            placeholder="Enter album description"
+                            value={uploadData.newAlbumDescription || ""}
+                            onChange={(e) => updateField("newAlbumDescription", e.target.value)}
+                            className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm resize-none mt-1"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -362,9 +404,9 @@ export default function UploadVideos2() {
                         {/* Quick add: pick language then open file picker */}
                         <div className="flex gap-2 items-center">
                           <select
-                            id="captionLanguageSelect"
+                            value={selectedLanguage}
+                            onChange={(e) => setSelectedLanguage(e.target.value)}
                             className="bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm"
-                            defaultValue="und"
                           >
                             <option value="und">Select language</option>
                             <option value="en">English</option>
@@ -378,10 +420,7 @@ export default function UploadVideos2() {
 
                           <button
                             type="button"
-                            onClick={() => {
-                              const lang = document.getElementById("captionLanguageSelect").value || "und";
-                              openFilePickerForLanguage(lang, "");
-                            }}
+                            onClick={() => fileInputRef.current.click()}
                             className="px-3 py-2 rounded bg-blue-600 hover:bg-blue-700 text-sm"
                           >
                             Add captions file
@@ -391,8 +430,7 @@ export default function UploadVideos2() {
                             ref={fileInputRef}
                             type="file"
                             accept=".srt,.vtt,.txt"
-                            multiple
-                            onChange={handleFileInputChangeWithMeta}
+                            onChange={handleFileInputChange}
                             className="hidden"
                           />
                         </div>
@@ -405,7 +443,7 @@ export default function UploadVideos2() {
 
                           {captions.map((c) => (
                             <div
-                              key={c.id}
+                              key={c.language}
                               className="flex items-center justify-between bg-[#0f0f0f] border border-gray-700 rounded-md p-2"
                             >
                               <div>
