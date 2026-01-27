@@ -76,7 +76,6 @@ export const UploadProvider = ({ children }) => {
       value={{
         uploadData,
         updateField,
-        updateVideoDetails,
         loading,
       }}
     >
