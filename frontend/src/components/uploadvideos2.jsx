@@ -52,6 +52,7 @@ export default function UploadVideos2() {
     setAlbums(albums);
   };
 
+  // Add caption file to state
   const addCaptionFiles = (fileList, language = "und") => {
     if (!fileList || fileList.length === 0) return;
     const file = fileList[0]; // only take first file per language
@@ -69,8 +70,9 @@ export default function UploadVideos2() {
     });
   };
 
-  const removeCaption = (id) => {
-    setCaptions((prev) => prev.filter((c) => c.id !== id));
+  // Remove caption by ID
+  const removeCaption = (language) => {
+    setCaptions((prev) => prev.filter((c) => c.language !== language));
   };
 
   // Handle file input
