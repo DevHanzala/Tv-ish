@@ -367,7 +367,16 @@ export default function UploadVideos2() {
                             className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                           />
                         </div>
-
+                        <div>
+                          <label className="text-sm text-gray-300">Artist Name</label>
+                          <input
+                            type="text"
+                            placeholder="Enter artist name"
+                            value={uploadData.newAlbumArtist || ""}
+                            onChange={(e) => updateField("newAlbumArtist", e.target.value)}
+                            className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                          />
+                        </div>
                         <div>
                           <label className="text-sm text-gray-300">New Album Description</label>
                           <textarea
