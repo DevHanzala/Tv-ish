@@ -1,6 +1,7 @@
 import { supabase } from "../config/supabase";
 
 export const getAlbums = async (userId) => {
+  if (!userId) return [];
   const { data, error } = await supabase
     .from("albums")
     .select("*")

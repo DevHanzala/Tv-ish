@@ -1,6 +1,7 @@
 import { supabase } from "../config/supabase.js";;
 
 export const getShows = async (userId) => {
+  if (!userId) return [];
   const { data, error } = await supabase
     .from("shows")
     .select("id, title")
