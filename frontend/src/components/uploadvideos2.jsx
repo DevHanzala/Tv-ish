@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams  } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { getShows } from "../services/show";
 import { getAlbums } from "../services/album";
@@ -11,6 +11,7 @@ export default function UploadVideos2() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const { videoId } = useParams();
 
   // Get Context Fields
   const { uploadData, updateField, loading } = useUpload();
@@ -107,11 +108,11 @@ export default function UploadVideos2() {
 
   // TODO: to update the data to supabase
   const handleStepClick = (step) => {
-    if (step === 1) navigate("/uploadvideos2");
-    else if (step === 2) navigate("/uploadvideos3");
-    else if (step === 3) navigate("/uploadvideos4");
-    else if (step === 4) navigate("/uploadvideos5");
-    else if (step === 5) navigate("/monetization");
+    if (step === 1) navigate(`/uploadvideos2/${videoId}`);
+    else if (step === 2) navigate(`/uploadvideos3/${videoId}`);
+    else if (step === 3) navigate(`/uploadvideos4/${videoId}`);
+    else if (step === 4) navigate(`/uploadvideos5/${videoId}`);
+    else if (step === 5) navigate(`/monetization/${videoId}`);
   };
 
   if (loading) {
@@ -263,7 +264,7 @@ export default function UploadVideos2() {
                         }}
                         className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                       >
-                        <option value="">-- Select a show --</option>
+                        <option value=""> Select a show </option>
                         {shows.map((show) => (
                           <option key={show.id} value={show.id}>
                             {show.title}
@@ -323,8 +324,8 @@ export default function UploadVideos2() {
                   </div>
                 )}
 
-                {/* Movies → Album */}
-                {uploadData.category === "Movies" && (
+                {/* Music → Album */}
+                {uploadData.category === "Music" && (
                   <div className="space-y-6 border-t border-gray-700 pt-4">
 
                     {/* Album Selection */}
@@ -346,7 +347,7 @@ export default function UploadVideos2() {
                         }}
                         className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                       >
-                        <option value="">-- Select an album --</option>
+                        <option value=""> Select an album </option>
                         {albums.map((alb) => (
                           <option key={alb.id} value={alb.id}>
                             {alb.title}

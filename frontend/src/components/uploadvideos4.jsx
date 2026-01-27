@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, Upload, Image, FileVideo } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUpload } from "../context/UploadContext"; // ✅ Context Import
 
 export default function UploadVideos4() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { videoId } = useParams();
 
   // 🔥 Use Upload Context
   const { uploadData, updateField } = useUpload();
@@ -62,11 +63,11 @@ export default function UploadVideos4() {
   const currentStep = getCurrentStep();
 
   const handleStepClick = (step) => {
-    if (step === 1) navigate("/uploadvideos2");
-    else if (step === 2) navigate("/uploadvideos3");
-    else if (step === 3) navigate("/uploadvideos4");
-    else if (step === 4) navigate("/uploadvideos5");
-    else if (step === 5) navigate("/Monetization");
+    if (step === 1) navigate(`/uploadvideos2/${videoId}`);
+    else if (step === 2) navigate(`/uploadvideos3/${videoId}`);
+    else if (step === 3) navigate(`/uploadvideos4/${videoId}`);
+    else if (step === 4) navigate(`/uploadvideos5/${videoId}`);
+    else if (step === 5) navigate(`/Monetization/${videoId}`);
   };
 
   const steps = [

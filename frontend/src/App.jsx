@@ -11,6 +11,7 @@ import {
 // import { VideoProvider } from "./context/VideoContext";    // assuming these exist
 import { AuthProvider } from "./context/AuthContext";
 import { ProfileProvider } from "./context/ProfileContext";
+import { UploadProvider } from "./context/UploadContext";
 import AuthGuard from "./guards/AuthGuard";
 
 // Page Components
@@ -73,7 +74,6 @@ import Monetization from "./components/Monetization";
 import Livestream from "./components/livestream";
 
 
-import { UploadProvider } from "./context/UploadContext";
 
 
 
@@ -95,11 +95,23 @@ import Audience from "./components/Audience";
 
 import AboutUs from "./pages/aboutus";
 import PublicRoute from "./guards/PublicRoute";
+import { Outlet } from "react-router-dom";
 
+
+const UploadLayout = () => {
+  return (
+    <UploadProvider>
+      <Outlet />
+    </UploadProvider>
+  );
+};
 
 // ✅ Layout Wrapper Component
 const MainLayout = ({ children }) => {
   const location = useLocation();
+
+
+
 
   // Routes where Navbar and Footer should be hidden
   const hideLayoutPaths = [
@@ -225,11 +237,11 @@ const MainLayout = ({ children }) => {
 // ✅ App Component
 function App() {
   return (
-    
-      <AuthProvider>
-        <ProfileProvider>
-        <UploadProvider>   
-          <Router>  {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
+
+    <AuthProvider>
+      <ProfileProvider>
+        {/* <UploadProvider>    */}
+        <Router>  {/* <-- UPLOAD CONTEXT WRAPPED HERE */}
           <ScrollToTop />
           <MainLayout>
             <Routes>
@@ -280,14 +292,34 @@ function App() {
               <Route path="/emailnotification" element={<AuthGuard><EmailNotification /></AuthGuard>} />
 
               {/* Upload */}
-              <Route path="/uploadvideos" element={<AuthGuard><UploadVideos /></AuthGuard>} />
-              <Route
-               path="/uploadvideos2/:videoId"
-                element={<AuthGuard><UploadProvider><UploadVideos2 /></UploadProvider></AuthGuard>} />
-              <Route path="/uploadvideos3/:videoId" element={<AuthGuard><UploadVideos3 /></AuthGuard>} />
-              <Route path="/uploadvideos4/:videoId" element={<AuthGuard><UploadVideos4 /></AuthGuard>} />
-              <Route path="/uploadvideos5/:videoId" element={<AuthGuard><UploadVideos5 /></AuthGuard>} />
-              <Route path="/Monetization" element={<AuthGuard><Monetization /></AuthGuard>} />
+              <Route element={<UploadLayout />}>
+                <Route
+                  path="/uploadvideos"
+                  element={<AuthGuard><UploadVideos /></AuthGuard>}
+                />
+                <Route
+                  path="/uploadvideos2/:videoId"
+                  element={<AuthGuard><UploadVideos2 /></AuthGuard>}
+                />
+                <Route
+                  path="/uploadvideos3/:videoId"
+                  element={<AuthGuard><UploadVideos3 /></AuthGuard>}
+                />
+                <Route
+                  path="/uploadvideos4/:videoId"
+                  element={<AuthGuard><UploadVideos4 /></AuthGuard>}
+                />
+                <Route
+                  path="/uploadvideos5/:videoId"
+                  element={<AuthGuard><UploadVideos5 /></AuthGuard>}
+                />
+                <Route
+                  path="/Monetization/:videoId"
+                  element={<AuthGuard><Monetization /></AuthGuard>}
+                />
+              </Route>
+
+
               <Route path="/notification" element={<AuthGuard><Notification /></AuthGuard>} />
               <Route path="/AI" element={<AuthGuard><AI /></AuthGuard>} />
               <Route path="/VideoFeed" element={<AuthGuard><VideoFeed /></AuthGuard>} />
@@ -310,10 +342,10 @@ function App() {
 
             </Routes>
           </MainLayout>
-          </Router>
-        </UploadProvider>
-        </ProfileProvider>  
-      </AuthProvider >   
+        </Router>
+        {/* </UploadProvider> */}
+      </ProfileProvider>
+    </AuthProvider >
   );
 }
 

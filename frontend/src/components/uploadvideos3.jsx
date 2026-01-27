@@ -1,13 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUpload } from "../context/UploadContext"; // ✅ Context Import
 
 export default function UploadVideos3() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+const { videoId } = useParams();
+
 
   // 🔥 Use Upload Context
   const { uploadData, updateField } = useUpload();
@@ -48,12 +50,13 @@ export default function UploadVideos3() {
   const currentStep = getCurrentStep();
 
   const handleStepClick = (step) => {
-    if (step === 1) navigate("/uploadvideos2");
-    else if (step === 2) navigate("/uploadvideos3");
-    else if (step === 3) navigate("/uploadvideos4");
-    else if (step === 4) navigate("/uploadvideos5");
-    else if (step === 5) navigate("/Monetization");
-  };
+  if (step === 1) navigate(`/uploadvideos2/${videoId}`);
+  else if (step === 2) navigate(`/uploadvideos3/${videoId}`);
+  else if (step === 3) navigate(`/uploadvideos4/${videoId}`);
+  else if (step === 4) navigate(`/uploadvideos5/${videoId}`);
+  else if (step === 5) navigate(`/Monetization/${videoId}`);
+};
+
 
   const steps = [
     { id: 1, label: "Details" },
@@ -309,69 +312,6 @@ export default function UploadVideos3() {
                         Add
                       </button>
                     </div>
-                  </div>
-                </div>
-
-                {/* Video Elements Section */}
-                <div className="space-y-6">
-                  <h2 className="text-lg font-semibold">Video elements</h2>
-                  <p className="text-sm text-gray-400">
-                    Use cards and an end screen to show viewers related videos,
-                    websites and calls to action.{" "}
-                    <a href="#" className="text-blue-500 hover:underline">
-                      Learn more
-                    </a>
-                  </p>
-
-                  {/* Subtitles */}
-                  <div className="flex items-center justify-between bg-[#0f0f0f] border border-gray-700 rounded-lg px-4 py-3 hover:border-gray-500 transition">
-                    <div>
-                      <h3 className="text-sm font-medium text-white">
-                        Add subtitles
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        Reach a broader audience by adding subtitles to your video
-                      </p>
-                    </div>
-
-                    <button className="bg-gray-700 hover:bg-gray-600 text-sm px-4 py-1.5 rounded">
-                      Add
-                    </button>
-                  </div>
-
-                  {/* End Screen */}
-                  <div className="flex items-center justify-between bg-[#0f0f0f] border border-gray-700 rounded-lg px-4 py-3 hover:border-gray-500 transition opacity-60 cursor-not-allowed">
-                    <div>
-                      <h3 className="text-sm font-medium text-white">
-                        Add an end screen
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        Promote related content at the end of your video
-                      </p>
-                    </div>
-
-                    <button
-                      disabled
-                      className="bg-gray-800 text-gray-500 text-sm px-4 py-1.5 rounded"
-                    >
-                      Add
-                    </button>
-                  </div>
-
-                  {/* Cards */}
-                  <div className="flex items-center justify-between bg-[#0f0f0f] border border-gray-700 rounded-lg px-4 py-3 hover:border-gray-500 transition">
-                    <div>
-                      <h3 className="text-sm font-medium text-white">
-                        Add cards
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        Promote related content during your video
-                      </p>
-                    </div>
-
-                    <button className="bg-gray-700 hover:bg-gray-600 text-sm px-4 py-1.5 rounded">
-                      Add
-                    </button>
                   </div>
                 </div>
               </div>
