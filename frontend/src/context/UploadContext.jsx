@@ -65,8 +65,10 @@ export const UploadProvider = ({ children }) => {
 
   // Update a single field in context
   const updateField = (field, value) => {
-    if (!["title", "description", "category"].includes(field)) return;
-    setUploadData((prev) => ({ ...prev, [field]: value }));
+    setUploadData((prev) => ({
+      ...prev,        // copy previous fields
+      [field]: value, // update this one
+    }));
   };
 
   // Update video details in Supabase
