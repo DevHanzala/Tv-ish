@@ -18,14 +18,26 @@ export const findEpisodeBySeasonAndNumber = async (seasonId, episodeNumber) => {
 
 //Service: create a new episode for a season
 export const createEpisode = async (seasonId, episodenumber, videoId) => {
-    //Verify that episode with particular number does not already exist for the season
+    //Verify that episode with particular number exists or not
     const existingEpisode = await findEpisodeBySeasonAndNumber(seasonId, episodenumber);
+
+    // If episode exists and video ID is different, return error
     if (existingEpisode) {
-        return {
-            success: false,
-            error: "Episode already exists for this season",
+        if (existingEpisode.video_id !== videoId) {
+            return {
+                success: false,
+                error: "Episode already exists for this season",
+            }
+        }
+        else {
+            return {
+                success: true,
+                episodeId: existingEpisode.id,
+            }
         }
     }
+
+    // Create new episode if it doesn't exist
     const { data, error } = await supabase
         .from("episodes")
         .insert([
