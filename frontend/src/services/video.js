@@ -134,3 +134,26 @@ export const uploadVideo = async (userId, file, onProgress) => {
         });
     });
 };
+
+// Service: Upload basic video details
+export const uploadVideoDetails = async (videoId, title, description, category) => {
+    const { error } = await supabase
+        .from("videos")
+        .update({
+            title: title ?? null,
+            description: description ?? null,
+            category: category ?? null,
+        })
+        .eq("id", videoId);
+
+    if (error) {
+        return {
+            success: false,
+            error: error.message,
+        };
+    }
+
+    return {
+        success: true,
+    };
+};
