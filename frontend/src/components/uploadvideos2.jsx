@@ -1,11 +1,17 @@
 import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle } from "lucide-react";
-import { useNavigate, useLocation, useParams  } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
 import { getShows } from "../services/show";
 import { getAlbums } from "../services/album";
 import { useAuth } from "../hooks/useAuth";
+import { uploadVideoDetails } from "../services/video";
+import { createSeason } from "../services/season";
+import { createEpisode } from "../services/episode";
+import { createTrack } from "../services/track";
+import { createShow } from "../services/show";
+import { createAlbum } from "../services/album";
 
 export default function UploadVideos2() {
   const navigate = useNavigate();
@@ -82,9 +88,111 @@ export default function UploadVideos2() {
     e.target.value = "";
   };
 
-  //TODO: to update data into supabase
-  const handleClose = async () => {
+  // update data to supabase as well as in context
+  const handleUpload = async () => {
+    // 1. Update video basic details
+    const res = await uploadVideoDetails(
+      videoId,
+      uploadData.title,
+      uploadData.description,
+      uploadData.category
+    );
+
+    if (!res.success) {
+      console.log(res.error);
+      return;
+    }
+
+    // 2. Handle Shows / Seasons / Episodes if category is shows
+    if (uploadData.category === "shows") {
+      // Determine showId
+      let showId = uploadData.show_id || null;
+
+      // CREATE SHOW (if needed)
+      if (!showId && uploadData.showMode === "create") {
+        const showRes = await createShow(
+          uploadData.newShowTitle || null,
+          uploadData.newShowDescription || null,
+          user.id
+        );
+
+        if (!showRes.success) {
+          console.log("Failed to create show", showRes.error);
+          return;
+        }
+
+        showId = showRes.showId;
+        updateField("show_id", showId);
+      }
+
+      // CREATE SEASON (if needed)
+      let seasonId = uploadData.season_id || null;
+      if (!seasonId) {
+        const seasonRes = await createSeason(showId, uploadData.season);
+        if (!seasonRes.success) {
+          console.log("Failed to create/find season", seasonRes.error);
+          return;
+        }
+        seasonId = seasonRes.seasonId;
+        updateField("season_id", seasonId);
+      }
+
+      // CREATE EPISODE (if needed)
+      if (!uploadData.episode_id) {
+        const episodeRes = await createEpisode(seasonId, uploadData.episode, videoId);
+        if (!episodeRes.success) {
+          console.log("Failed to create/find episode", episodeRes.error);
+          return;
+        }
+        updateField("episode_id", episodeRes.episodeId);
+      }
+    }
+
+    // 3. Handle Music / Albums / Tracks
+    else if (uploadData.category === "music") {
+      // Determine albumId
+      let albumId = uploadData.album_id || null;
+
+      // CREATE ALBUM (if needed)
+      if (!albumId && uploadData.albumMode === "create") {
+        const albumRes = await createAlbum(
+          user.id,
+          uploadData.newAlbumTitle,
+          uploadData.newAlbumArtist,
+          uploadData.newAlbumDescription || null,
+          user.id
+        );
+
+        if (!albumRes.success) {
+          console.log("Failed to create album", albumRes.error);
+          return;
+        }
+
+        albumId = albumRes.albumId;
+        updateField("album_id", albumId);
+      }
+
+      // CREATE TRACK (if needed)
+      if (!uploadData.track_id) {
+        const trackRes = await createTrack(albumId, uploadData.trackNumber, videoId);
+        if (!trackRes.success) {
+          console.log("Failed to create track", trackRes.error);
+          return;
+        }
+        updateField("track_id", trackRes.data.id);
+      }
+    }
+
+    // TODO: handle Captions later
   };
+
+  // update the data in supabase when modal is closed
+  const handleClose = async () => {
+    await handleUpload();
+    setOpen(false);
+    navigate("/dashboard");
+  };
+
 
 
   // Progress Bar Steps
@@ -107,7 +215,9 @@ export default function UploadVideos2() {
   const currentStep = getCurrentStep();
 
   // TODO: to update the data to supabase
-  const handleStepClick = (step) => {
+  const handleStepClick = async (step) => {
+    await handleUpload();
+    
     if (step === 1) navigate(`/uploadvideos2/${videoId}`);
     else if (step === 2) navigate(`/uploadvideos3/${videoId}`);
     else if (step === 3) navigate(`/uploadvideos4/${videoId}`);
@@ -229,20 +339,20 @@ export default function UploadVideos2() {
                     }}
                     className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                   >
-                    <option>Select type</option>
-                    <option>Movies</option>
-                    <option>Shows</option>
-                    <option>Podcast</option>
-                    <option>Snips</option>
-                    <option>Music</option>
-                    <option>Education</option>
-                    <option>Sports</option>
-                    <option>AI</option>
+                    <option value={""}>Select type</option>
+                    <option value={"movies"}>Movies</option>
+                    <option value={"shows"}>Shows</option>
+                    <option value={"podcast"}>Podcast</option>
+                    <option value={"snips"}>Snips</option>
+                    <option value={"music"}>Music</option>
+                    <option value={"education"}>Education</option>
+                    <option value={"sports"}>Sports</option>
+                    <option value={"AI"}>AI</option>
                   </select>
                 </div>
 
                 {/* Shows → Season/Episode */}
-                {uploadData.category === "Shows" && (
+                {uploadData.category === "shows" && (
                   <div className="space-y-6 border-t border-gray-700 pt-4">
 
                     {/* Show Selection */}
@@ -325,7 +435,7 @@ export default function UploadVideos2() {
                 )}
 
                 {/* Music → Album */}
-                {uploadData.category === "Music" && (
+                {uploadData.category === "music" && (
                   <div className="space-y-6 border-t border-gray-700 pt-4">
 
                     {/* Album Selection */}
@@ -356,6 +466,14 @@ export default function UploadVideos2() {
                         <option value="__new__">+ Create new album</option>
                       </select>
                     </div>
+
+                    <input
+                      type="text"
+                      placeholder="Track Number"
+                      value={uploadData.trackNumber || ""}
+                      onChange={(e) => updateField("trackNumber", e.target.value)}
+                      className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
+                    />
 
                     {/* Create New Album */}
                     {creatingNewAlbum && (
