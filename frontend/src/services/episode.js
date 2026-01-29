@@ -62,3 +62,26 @@ export const createEpisode = async (seasonId, episodenumber, videoId) => {
         episodeId: data.id
     };
 }
+
+//Service: fetch episode and season by video ID
+export const fetchEpisodeAndSeasonByVideoId = async (videoId) => {
+        const { data, error } = await supabase
+            .from("episodes")
+            .select(`
+          id,
+          episode_number,
+          season_id,
+          seasons (
+            id,
+            season_number,
+            show_id
+          )
+        `)
+            .eq("video_id", videoId)
+            .maybeSingle();
+
+        if (error || !data) return;
+
+        return data;
+
+}
