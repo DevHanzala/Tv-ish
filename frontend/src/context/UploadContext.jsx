@@ -75,7 +75,7 @@ export const UploadProvider = ({ children }) => {
     }));
   };
 
-  /*TODO: to fetch season and episode if category is shows
+  /* to fetch season and episode if category is shows
    OR 
    to fetch album and track if category is music */
 
