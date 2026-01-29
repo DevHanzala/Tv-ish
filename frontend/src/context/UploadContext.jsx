@@ -2,6 +2,8 @@
 import { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../config/supabase.js";
 import { useParams } from "react-router-dom";
+import { fetchTrackAndAlbumByVideoId } from "../services/track.js";
+import { fetchEpisodeAndSeasonByVideoId } from "../services/episode.js";
 
 const UploadContext = createContext();
 
@@ -76,6 +78,42 @@ export const UploadProvider = ({ children }) => {
   /*TODO: to fetch season and episode if category is shows
    OR 
    to fetch album and track if category is music */
+
+  useEffect(() => {
+    if (!videoId || !uploadData.category) return;
+
+    const categoryHandler = async () => {
+      // SHOWS
+      if (uploadData.category === "shows") {
+        const episodeAndSeason = await fetchEpisodeAndSeasonByVideoId(videoId);
+        if (!episodeAndSeason) return;
+
+        updateField("episode_id", episodeAndSeason.id);
+        updateField("episode", episodeAndSeason.episode_number);
+
+        updateField("season_id", episodeAndSeason.season_id);
+        updateField("season", episodeAndSeason.seasons.season_number);
+
+        updateField("show_id", episodeAndSeason.seasons.show_id);
+      }
+
+      // MUSIC
+      else if (uploadData.category === "music") {
+        const trackAndAlbum = await fetchTrackAndAlbumByVideoId(videoId);
+        if (!trackAndAlbum) return;
+
+        updateField("track_id", trackAndAlbum.id);
+        updateField("trackNumber", trackAndAlbum.track_number);
+
+        updateField("album_id", trackAndAlbum.album_id);
+        updateField("album_title", trackAndAlbum.albums.title);
+        updateField("album_artist", trackAndAlbum.albums.artist);
+      }
+    };
+
+    categoryHandler();
+  }, [videoId, uploadData.category]);
+
 
   return (
     <UploadContext.Provider
