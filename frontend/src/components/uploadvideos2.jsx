@@ -99,7 +99,7 @@ export default function UploadVideos2() {
     );
 
     if (!res.success) {
-      console.log(res.error);
+      console.error("❌ Video details save failed:", res.error);
       return;
     }
 
@@ -217,7 +217,7 @@ export default function UploadVideos2() {
   // TODO: to update the data to supabase
   const handleStepClick = async (step) => {
     await handleUpload();
-    
+
     if (step === 1) navigate(`/uploadvideos2/${videoId}`);
     else if (step === 2) navigate(`/uploadvideos3/${videoId}`);
     else if (step === 3) navigate(`/uploadvideos4/${videoId}`);
@@ -311,7 +311,10 @@ export default function UploadVideos2() {
                     type="text"
                     placeholder="Enter project title"
                     value={uploadData.title || ""}
-                    onChange={(e) => updateField("title", e.target.value)}
+                    onChange={(e) => {
+                      updateField("title", e.target.value);
+                    }}
+
                     className="w-full bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm mt-1"
                   />
                 </div>
@@ -322,7 +325,10 @@ export default function UploadVideos2() {
                   <textarea
                     placeholder="Provide a brief description of your project"
                     value={uploadData.description || ""}
-                    onChange={(e) => updateField("description", e.target.value)}
+                    onChange={(e) => {
+                      updateField("description", e.target.value);
+                    }}
+
                     className="w-full h-24 bg-[#0f0f0f] border border-gray-700 rounded-md p-2 text-sm resize-none mt-1"
                   />
                 </div>

@@ -14,7 +14,12 @@ export const UploadProvider = ({ children }) => {
     title: "",
     description: "",
     category: "",
+    synopsis: "",
+    genres: [],
+    cast: [],
+    crew: [],
   });
+
   const [loading, setLoading] = useState(true);
 
   // Fetch minimal video details (title, description, category) and user captions
@@ -27,9 +32,35 @@ export const UploadProvider = ({ children }) => {
       // Fetch video details
       const { data: videoData, error: videoError } = await supabase
         .from("videos")
-        .select("title, description, category, id, visibility, is_18_plus")
+        .select("title, description, category, id, visibility, is_18_plus, synopsis")
         .eq("id", videoId)
         .single();
+
+      const { data: genreLinks } = await supabase
+        .from("video_genres")
+        .select("genres(name)")
+        .eq("video_id", videoId);
+
+      const genres = genreLinks?.map((g) => g.genres.name) || [];
+
+      // Fetch cast
+      const { data: castData } = await supabase
+        .from("cast_members")
+        .select("name")
+        .eq("video_id", videoId);
+
+      // Fetch crew
+      const { data: crewData } = await supabase
+        .from("crew_members")
+        .select("name, crew_roles(name)")
+        .eq("video_id", videoId);
+
+      const crew = crewData?.map((c) => ({
+        name: c.name,
+        role: c.crew_roles?.name,
+      })) || [];
+
+
 
       if (videoError) {
         console.error("Failed to fetch video details:", videoError);
@@ -47,6 +78,7 @@ export const UploadProvider = ({ children }) => {
         console.error("Failed to fetch captions:", captionsError);
       }
 
+
       // Set uploadData state including captions
       setUploadData({
         videoId: videoData.id,
@@ -55,7 +87,11 @@ export const UploadProvider = ({ children }) => {
         category: videoData.category || "",
         captions: captionsData || [], // store captions array
         visibility: videoData.visibility || "private",
-        is_18_plus: videoData.is_18_plus || false
+        is_18_plus: videoData.is_18_plus || false,
+        synopsis: videoData.synopsis || "",
+        genres,
+        cast: castData?.map((c) => c.name) || [],
+        crew,
       });
 
       setLoading(false);
