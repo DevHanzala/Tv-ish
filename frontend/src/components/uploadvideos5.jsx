@@ -10,40 +10,55 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
+import { fetchLegalDocByVideoId, insertOrUpdateLegalDoc } from "../services/legalDocuments";
+import { useAuth } from "../hooks/useAuth.js";
+import { updateVisibilityAndAudience } from "../services/video.js";
 
 export default function UploadVideos5() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const { videoId } = useParams();
   const location = useLocation();
+  const { user } = useAuth();
+
+  const [notAgreed, setNotAgreed] = useState(false);
 
   // UploadContext
-  const { uploadData, updateField, resetUploadData } = useUpload();
-
-  // Local state bound to context
-  const [visibility, setVisibility] = useState(uploadData.visibility || "private");
-  const [rating, setRating] = useState(uploadData.rating || "");
-  const [legalChecks, setLegalChecks] = useState(uploadData.legalChecks || {
-    ownership: false,
-    noCopyright: false,
-    consent: false,
-  });
-  const [legalDoc, setLegalDoc] = useState(uploadData.legalDoc || null);
-
-  const [publishConfirm, setPublishConfirm] = useState(false);
+  const { uploadData, updateField } = useUpload();
 
   useEffect(() => setOpen(true), []);
 
-  // Sync with context
-  useEffect(() => updateField("visibility", visibility), [visibility]);
-  useEffect(() => updateField("rating", rating), [rating]);
-  useEffect(() => updateField("legalChecks", legalChecks), [legalChecks]);
-  useEffect(() => updateField("legalDoc", legalDoc), [legalDoc]);
+  useEffect(() => {
+    if (!uploadData.videoId) return;
 
-  const handleClose = () => {
-    setOpen(false);
-    setTimeout(() => navigate(-1), 250);
-  };
+    const fetchLegalDoc = async () => {
+      const legalDoc = await fetchLegalDocByVideoId(videoId);
+
+      // If no legal doc exists → initialize defaults
+      if (!legalDoc) {
+        updateField("legalChecks", {
+          ownership: false,
+          noCopyright: false,
+          consent: false,
+        });
+        updateField("legalDoc", null);
+        return;
+      }
+
+      // If legal doc exists → hydrate from DB
+      updateField("legalChecks", {
+        ownership: legalDoc.ownership,
+        noCopyright: legalDoc.no_copyright,
+        consent: legalDoc.consent,
+        legalId: legalDoc.id,
+      });
+
+      updateField("legalDoc", legalDoc.file_path || null);
+    };
+
+    fetchLegalDoc();
+  }, [uploadData.videoId]);
+
 
   const getCurrentStep = () => {
     if (location.pathname.includes("Monetization")) return 5;
@@ -54,7 +69,16 @@ export default function UploadVideos5() {
   };
   const currentStep = getCurrentStep();
 
-  const handleStepClick = (step) => {
+  const handleStepClick = async (step) => {
+    // Validate legal checks before proceeding
+    const legalChecks = uploadData.legalChecks;
+    if (!legalChecks?.ownership || !legalChecks?.consent || !legalChecks?.noCopyright) {
+      setNotAgreed(true);
+      return; // stop navigation
+    }
+    setNotAgreed(false);
+    await handleUpload();
+
     if (step === 1) navigate(`/uploadvideos2/${videoId}`);
     else if (step === 2) navigate(`/uploadvideos3/${videoId}`);
     else if (step === 3) navigate(`/uploadvideos4/${videoId}`);
@@ -70,25 +94,34 @@ export default function UploadVideos5() {
     { id: 5, label: "Monetization" },
   ];
 
-  const handlePublish = () => {
-    const requiresDoc = legalChecks.ownership && legalChecks.consent;
-
-    if (!rating || !legalChecks.ownership || !legalChecks.noCopyright) {
-      alert("⚠️ Please complete ratings and legal confirmations before publishing.");
+  const handleUpload = async () => {
+    // Update visibility and audience settings in DB
+    const visibilityUpdateResponse = await updateVisibilityAndAudience(
+      videoId, uploadData.visibility,
+      uploadData.is_18_plus
+    );
+    // if visibility update fails
+    if (!visibilityUpdateResponse.success) {
+      alert(`⚠️ Error updating visibility and audience`);
       return;
     }
-
-    if (requiresDoc && !legalDoc) {
-      alert("⚠️ Legal document upload is required when 'ownership' and 'consent' are both checked.");
+    //Create or update legal doc entry in DB
+    const legalDocResponse = await insertOrUpdateLegalDoc(
+      uploadData.legalChecks,
+      videoId
+    );
+    // if legal doc upsert fails
+    if (!legalDocResponse.success) {
+      alert(`⚠️ Error saving legal checks`);
       return;
     }
+    //TODO: if legal doc file is present then upload to storage bucket
+  }
 
-    setPublishConfirm(true);
-    setTimeout(() => {
-      alert("✅ Your video has been published successfully!");
-      resetUploadData();
-      navigate("/");
-    }, 1200);
+  const handleClose = async () => {
+    await handleUpload();
+    setOpen(false);
+    navigate("/dashboard")
   };
 
   return (
@@ -138,13 +171,12 @@ export default function UploadVideos5() {
                         className={`relative z-10 flex flex-col items-center cursor-pointer transition hover:scale-105 ${step.id > currentStep ? "opacity-60" : ""}`}
                       >
                         <div
-                          className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${
-                            isCompleted
-                              ? "bg-white border-white text-black"
-                              : isActive
+                          className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${isCompleted
+                            ? "bg-white border-white text-black"
+                            : isActive
                               ? "bg-blue-600 border-blue-600 text-white"
                               : "bg-black border-gray-400"
-                          }`}
+                            }`}
                         >
                           {isCompleted ? (
                             <CheckCircle size={18} className="text-black" />
@@ -169,8 +201,8 @@ export default function UploadVideos5() {
                           <input
                             type="radio"
                             name="visibility"
-                            checked={visibility === type}
-                            onChange={() => setVisibility(type)}
+                            checked={uploadData.visibility === type}
+                            onChange={() => updateField("visibility", type)}
                             className="accent-blue-600"
                           />
                           <span className="capitalize">
@@ -178,8 +210,8 @@ export default function UploadVideos5() {
                             {type === "private"
                               ? "Only you and chosen people can view"
                               : type === "unlisted"
-                              ? "Anyone with the link can watch"
-                              : "Everyone can watch"}
+                                ? "Anyone with the link can watch"
+                                : "Everyone can watch"}
                           </span>
                         </label>
                       ))}
@@ -189,21 +221,20 @@ export default function UploadVideos5() {
                   {/* Ratings */}
                   <div className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-4">
                     <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
-                      <Star size={16} className="text-yellow-400" /> Audience Rating
+                      <Star size={16} className="text-yellow-400" /> Audience
                     </h3>
-                    <p className="text-xs text-gray-400 mb-3">Select the appropriate age group for your content.</p>
-                    <select
-                      value={rating}
-                      onChange={(e) => setRating(e.target.value)}
-                      className="bg-[#202020] border border-gray-700 text-sm px-3 py-2 rounded w-full focus:outline-none focus:border-blue-500"
-                    >
-                      <option value="">Select Rating</option>
-                      <option value="G">G — Suitable for all ages</option>
-                      <option value="PG">PG — Parental Guidance suggested</option>
-                      <option value="PG-13">PG-13 — Some material may be inappropriate for children</option>
-                      <option value="R">R — Restricted (18+)</option>
-                      <option value="NC-17">NC-17 — Adults only</option>
-                    </select>
+
+                    <label className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={uploadData.is_18_plus || false}
+                        onChange={(e) => updateField("is_18_plus", e.target.checked)}
+                        className="accent-red-600"
+                      />
+                      <span className="text-sm">
+                        This content is suitable for adults only (18+)
+                      </span>
+                    </label>
                   </div>
 
                   {/* Legal & Rights */}
@@ -221,23 +252,31 @@ export default function UploadVideos5() {
                         <label key={key} className="flex items-center gap-3">
                           <input
                             type="checkbox"
-                            checked={legalChecks[key]}
+                            checked={uploadData.legalChecks?.[key] || false}
                             onChange={(e) =>
-                              setLegalChecks({ ...legalChecks, [key]: e.target.checked })
+                              updateField("legalChecks", {
+                                ...uploadData.legalChecks,
+                                [key]: e.target.checked,
+                              })
                             }
                             className="accent-green-500"
                           />
                           <span className="text-sm">{label}</span>
                         </label>
                       ))}
+
                     </div>
                   </div>
 
                   {/* Legal Docs */}
-                  <div className={`bg-[#0f0f0f] border ${legalChecks.ownership && legalChecks.consent ? "border-red-500" : "border-gray-700"} rounded-lg p-4`}>
+                  <div className={`bg-[#0f0f0f] border
+                     ${uploadData?.legalChecks?.ownership
+                      && uploadData?.legalChecks?.consent ? "border-red-500"
+                      : "border-gray-700"} rounded-lg p-4`}>
+
                     <h3 className="text-sm font-semibold flex items-center gap-2 mb-3">
                       <FileText size={16} className="text-blue-400" /> Upload Legal Documents{" "}
-                      {legalChecks.ownership && legalChecks.consent && (
+                      {uploadData?.legalChecks?.ownership && uploadData?.legalChecks?.consent && (
                         <span className="text-red-400 text-xs">(Required)</span>
                       )}
                     </h3>
@@ -247,14 +286,12 @@ export default function UploadVideos5() {
                       onChange={(e) => {
                         const file = e.target.files[0];
                         if (file) {
-                          setLegalDoc(file);
-                          updateField("legalDoc", file); // Save metadata
+                          updateField("legalDoc", file);
                         }
                       }}
-                      className="block w-full text-sm text-gray-300 bg-[#202020] border border-gray-700 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
                     />
-                    {legalChecks.ownership && legalChecks.consent && !legalDoc && (
-                      <p className="text-xs text-red-400 mt-2">⚠️ Please upload a legal document.</p>
+                    {notAgreed && (
+                      <p className="text-xs text-red-400 mt-2">⚠️ Please agree with all legal rights</p>
                     )}
                     {uploadData.legalDoc && (
                       <p className="text-xs text-gray-400 mt-2">

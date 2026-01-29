@@ -11,7 +11,7 @@ export const fetchLegalDocByVideoId = async (videoId) => {
     return data;
 };
 
-// Service: insert or update legal checks into legal-docs bucket
+// Service: insert or update legal checks into legal-docs 
 export const insertOrUpdateLegalDoc = async (legalChecks, videoId) => {
     if (!videoId) {
         return { success: false, error: "videoId is required." };
