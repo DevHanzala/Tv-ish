@@ -27,7 +27,7 @@ export const UploadProvider = ({ children }) => {
       // Fetch video details
       const { data: videoData, error: videoError } = await supabase
         .from("videos")
-        .select("title, description, category, id")
+        .select("title, description, category, id, visibility, is_18_plus")
         .eq("id", videoId)
         .single();
 
@@ -54,6 +54,8 @@ export const UploadProvider = ({ children }) => {
         description: videoData.description || "",
         category: videoData.category || "",
         captions: captionsData || [], // store captions array
+        visibility: videoData.visibility || "private",
+        is_18_plus: videoData.is_18_plus || false
       });
 
       setLoading(false);
