@@ -26,3 +26,25 @@ export const createTrack = async (albumId, trackNumber, videoId) => {
         data
     };
 }
+
+//Service: fetch track and album by video ID
+export const fetchTrackAndAlbumByVideoId = async (videoId) => {
+    const { data, error } = await supabase
+        .from("tracks")
+        .select(`
+          id,
+          track_number,
+          album_id,
+          albums (
+            id,
+            title,
+            artist
+          )
+        `)
+        .eq("video_id", videoId)
+        .maybeSingle();
+
+    if (error || !data) return null;
+
+    return data;
+}
