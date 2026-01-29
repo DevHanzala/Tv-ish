@@ -157,3 +157,25 @@ export const uploadVideoDetails = async (videoId, title, description, category) 
         success: true,
     };
 };
+
+// Service: Update video visibility and audience settings
+export const updateVisibilityAndAudience = async (videoId, visibility, is_18_plus) => {
+    const { error } = await supabase
+        .from("videos")
+        .update({
+            visibility: visibility,
+            is_18_plus: is_18_plus,
+        })
+        .eq("id", videoId);
+
+    if (error) {
+        return {
+            success: false,
+            error: error.message,
+        };
+    }
+
+    return {
+        success: true,
+    };
+};
