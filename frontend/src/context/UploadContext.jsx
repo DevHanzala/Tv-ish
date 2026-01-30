@@ -33,7 +33,7 @@ export const UploadProvider = ({ children }) => {
       // Fetch video details
       const { data: videoData, error: videoError } = await supabase
         .from("videos")
-        .select("title, description, category, id, visibility, is_18_plus, synopsis")
+        .select("title, description, category, id, visibility, is_18_plus, synopsis, monetization_id")
         .eq("id", videoId)
         .single();
 
