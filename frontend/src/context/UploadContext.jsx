@@ -15,6 +15,7 @@ export const UploadProvider = ({ children }) => {
     description: "",
     category: "",
     synopsis: "",
+    monetization_id: null,
     genres: [],
     cast: [],
     crew: [],
@@ -85,6 +86,7 @@ export const UploadProvider = ({ children }) => {
         title: videoData.title || "",
         description: videoData.description || "",
         category: videoData.category || "",
+        monetization_id: videoData.monetization_id || null,
         captions: captionsData || [], // store captions array
         visibility: videoData.visibility || "private",
         is_18_plus: videoData.is_18_plus || false,
