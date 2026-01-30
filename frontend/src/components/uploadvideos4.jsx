@@ -2,25 +2,32 @@ import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, Upload, Image, FileVideo } from "lucide-react";
 import { useNavigate, useLocation, useParams } from "react-router-dom";
+import { useUpload } from "../context/UploadContext.jsx";
+import { uploadMediaFile, deleteMediaFile } from "../services/mediaUpload.js";
+import { useAuth } from "../hooks/useAuth.js";
+
 
 export default function UploadVideos4() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { videoId } = useParams();
+  const { media } = useUpload();
+  const { user } = useAuth();
 
-  // Local states (UI only)
-  const [trailer, setTrailer] = useState(null);
-  const [artworks, setArtworks] = useState({
-    "1920x1080": null,
-    "1080x1080": null,
-    "1280x720": null,
-    "720x720": null,
-  });
-  const [artworkWidth, setArtworkWidth] = useState(0);
-  const [artworkHeight, setArtworkHeight] = useState(0);
+  const [localTrailer, setLocalTrailer] = useState(media.trailer);
+  const [localArtworks, setLocalArtworks] = useState(media.artworks);
   const [showDimensionPopup, setShowDimensionPopup] = useState(false);
   const [showTrailerWarning, setShowTrailerWarning] = useState(false);
+  const [artworkProgress, setArtworkProgress] = useState({});
+  const [trailerProgress, setTrailerProgress] = useState(null);
+
+
+  useEffect(() => {
+    setLocalTrailer(media.trailer);
+    setLocalArtworks(media.artworks);
+  }, [media]);
+
 
   const dimensionOptions = [
     { label: "1920x1080", width: 1920, height: 1080 },
@@ -29,8 +36,7 @@ export default function UploadVideos4() {
     { label: "720x720", width: 720, height: 720 },
   ];
 
-  const artworkRequired = true; // For UI demo, assume required
-  const trailerRequired = true; // For UI demo, assume required
+  const trailerRequired = false;
 
   useEffect(() => setOpen(true), []);
 
@@ -48,6 +54,7 @@ export default function UploadVideos4() {
   };
 
   const currentStep = getCurrentStep();
+  const allArtworksUploaded = Object.values(localArtworks).every(Boolean);
 
   const handleStepClick = (step) => {
     if (step === 1) navigate(`/uploadvideos2/${videoId}`);
@@ -57,30 +64,117 @@ export default function UploadVideos4() {
     else if (step === 5) navigate(`/Monetization/${videoId}`);
   };
 
-  const handleFileUpload = (e, setter) => {
-    const file = e.target.files[0];
-    if (file) setter(file);
+  const handleTrailerDelete = async () => {
+    await deleteMediaFile({
+      bucket: "trailers",
+      objectPath: localTrailer.path,
+      type: "trailer",
+      videoId,
+    });
+
+    setLocalTrailer(null);
+    setTrailerProgress(null);
   };
 
-  const handleArtworkUpload = (e, sizeLabel) => {
-    const file = e.target.files[0];
-    if (file) {
-      setArtworks((prev) => ({ ...prev, [sizeLabel]: file }));
-    }
+  const handleArtworkDelete = async (size) => {
+    const artwork = localArtworks[size];
+    if (!artwork) return;
+
+    await deleteMediaFile({
+      bucket: "artworks",
+      objectPath: artwork.path,
+      type: "artwork",
+      videoId,
+      size,
+    });
+
+    setLocalArtworks((prev) => {
+      const updated = { ...prev };
+      delete updated[size];
+      return updated;
+    });
+
+    setArtworkProgress((prev) => ({
+      ...prev,
+      [size]: null,
+    }));
   };
+
+
+  const handleArtworkUpload = async (file, size) => {
+    const ext = file.name.split(".").pop().toLowerCase();
+    const path = `${videoId}/artworks/${size}.${ext}`;
+
+    // reset progress on new upload / replace
+    setArtworkProgress((prev) => ({
+      ...prev,
+      [size]: 0,
+    }));
+
+    await uploadMediaFile({
+      user,
+      videoId,
+      file,
+      bucket: "artworks",
+      objectPath: path,
+      type: "artwork",
+      size,
+      onProgress: (percent) => {
+        setArtworkProgress((prev) => ({
+          ...prev,
+          [size]: percent,
+        }));
+      },
+    });
+
+    setLocalArtworks((prev) => ({
+      ...prev,
+      [size]: {
+        path,
+        name: file.name,
+      },
+    }));
+
+    // clear progress after success
+    setArtworkProgress((prev) => ({
+      ...prev,
+      [size]: null,
+    }));
+  };
+
+
+  const handleTrailerUpload = async (file) => {
+
+    const ext = file.name.split(".").pop().toLowerCase();
+    const path = `${videoId}/trailer.${ext}`;
+
+
+    await uploadMediaFile({
+      user,
+      videoId,
+      file,
+      bucket: "trailers",
+      objectPath: path,
+      type: "trailer",
+      onProgress: (percent) => {
+        setTrailerProgress(percent);
+      },
+    });
+
+
+    setLocalTrailer({ path, name: file.name });
+    setTrailerProgress(null)
+  };
+
+
+
 
   const handleNextStep = () => {
-    if (trailerRequired && !trailer) {
-      setShowTrailerWarning(true);
-      return;
-    }
-    if (artworkRequired && Object.values(artworks).some((f) => !f)) {
-      setShowTrailerWarning(true);
-      return;
-    }
     setShowTrailerWarning(false);
     handleStepClick(currentStep + 1);
   };
+
+
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-black text-white">
@@ -127,7 +221,7 @@ export default function UploadVideos4() {
                 {/* Progress Steps */}
                 <div className="relative flex items-center justify-between w-full mt-6 mb-10 px-8">
                   <div className="absolute top-1/2 left-0 w-full border-t-2 border-dashed border-gray-600 -translate-y-1/2 z-0" />
-                  {[1,2,3,4,5].map((step) => {
+                  {[1, 2, 3, 4, 5].map((step) => {
                     const isCompleted = step < currentStep;
                     const isActive = step === currentStep;
                     return (
@@ -146,17 +240,62 @@ export default function UploadVideos4() {
                 </div>
 
                 {/* Trailer Upload */}
-                <div className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-5 hover:border-gray-500 transition">
+                <div className="bg-[#0f0f0f] border border-gray-700 rounded-lg p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <FileVideo size={20} className="text-blue-400" />
-                    <h3 className="text-md font-medium">Upload Trailer</h3>
+                    <h3 className="text-md font-medium">
+                      {localTrailer ? "Added" : "Upload Trailer"}
+                    </h3>
                   </div>
-                  <p className="text-xs text-gray-400 mb-4">Add a short trailer to give viewers a sneak peek.</p>
-                  <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-600 rounded-lg py-8 cursor-pointer hover:border-blue-500 transition">
-                    <Upload size={30} className="text-gray-400 mb-2" />
-                    <span className="text-sm text-gray-300">{trailer ? trailer.name : "Click to upload trailer"}</span>
-                    <input type="file" accept="video/*" onChange={(e) => handleFileUpload(e, setTrailer)} className="hidden" />
-                  </label>
+
+                  {!localTrailer ? (
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-gray-600 rounded-lg py-8 cursor-pointer hover:border-blue-500 transition">
+                      <Upload size={30} className="text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-300">
+                        Click to upload trailer
+                      </span>
+
+                      <input
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) handleTrailerUpload(file);
+                        }}
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between bg-black/40 rounded-lg p-4">
+                      <p className="text-sm text-gray-300">{localTrailer.name}</p>
+
+                      {trailerProgress !== null && trailerProgress < 100 && (
+                        <p className="text-xs text-gray-400 mt-1">
+                          Uploading… {trailerProgress}%
+                        </p>
+                      )}
+
+
+                      <label className="text-sm text-blue-400 cursor-pointer hover:underline">
+                        Replace
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (file) handleTrailerUpload(file);
+                          }}
+                        />
+                      </label>
+                      <button
+                        onClick={handleTrailerDelete}
+                        className="text-sm text-red-400 hover:underline"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {/* Artwork Upload */}
@@ -178,18 +317,36 @@ export default function UploadVideos4() {
                   </button>
 
                   <div className="mt-5 space-y-4">
-                    {Object.entries(artworks).map(([label, file]) => (
-                      <div key={label} className="flex items-center justify-between bg-[#141414] border border-gray-700 rounded-lg px-4 py-3">
-                        <div>
-                          <p className="text-sm font-semibold">{label}</p>
-                          <p className="text-xs text-gray-400">{file ? file.name : "No file uploaded"}</p>
+                    {Object.entries(localArtworks)
+                      .filter(([, file]) => file)
+                      .map(([label, file]) => (
+                        <div key={label} className="space-y-1">
+                          <div className="flex justify-between items-center">
+                            <p className="text-sm text-gray-300">{file.name}</p>
+
+                            <label
+                              htmlFor={`artworkFileInput-${label}`}
+                              className="text-sm text-blue-400 cursor-pointer hover:underline"
+                            >
+                              Replace
+                            </label>
+                            <button
+                              onClick={() => handleArtworkDelete(label)}
+                              className="text-xs text-red-400 hover:underline"
+                            >
+                              Delete
+                            </button>
+
+                          </div>
+
+                          {/* ✅ ADD THIS RIGHT HERE */}
+                          {artworkProgress[label] && artworkProgress[label] < 100 && (
+                            <p className="text-xs text-gray-400">
+                              Uploading… {artworkProgress[label]}%
+                            </p>
+                          )}
                         </div>
-                        <div className="flex gap-2">
-                          <label htmlFor={`artworkFileInput-${label}`} className="px-3 py-1 bg-blue-700 hover:bg-blue-600 text-xs rounded cursor-pointer">Replace</label>
-                          {file && <button onClick={() => setArtworks((prev) => ({ ...prev, [label]: null }))} className="px-3 py-1 bg-red-700 hover:bg-red-600 text-xs rounded">Remove</button>}
-                        </div>
-                      </div>
-                    ))}
+                      ))}
                   </div>
 
                   {dimensionOptions.map((option) => (
@@ -198,7 +355,13 @@ export default function UploadVideos4() {
                       type="file"
                       accept="image/*"
                       id={`artworkFileInput-${option.label}`}
-                      onChange={(e) => handleArtworkUpload(e, option.label)}
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          handleArtworkUpload(file, option.label);
+                        }
+                      }}
+
                       className="hidden"
                     />
                   ))}
@@ -224,7 +387,10 @@ export default function UploadVideos4() {
             >
               <div className="flex items-center gap-2 text-sm text-gray-400">
                 <CheckCircle size={16} className="text-green-500" />
-                {trailer && Object.values(artworks).every((f) => f) ? "All media uploaded successfully." : "Waiting for uploads..."}
+                {localTrailer && Object.values(localArtworks).every((f) => f)
+                  ? "All media uploaded successfully."
+                  : "Waiting for uploads..."}
+
               </div>
 
               <div className="flex gap-3">
@@ -237,11 +403,10 @@ export default function UploadVideos4() {
 
                 <button
                   onClick={handleNextStep}
-                  className={`px-6 py-2 rounded text-sm font-medium ${
-                    trailerRequired && (!trailer || !Object.values(artworks).every((f) => f))
-                      ? "bg-gray-700 cursor-not-allowed text-gray-400"
-                      : "bg-blue-600 hover:bg-blue-700"
-                  }`}
+                  className={`px-6 py-2 rounded text-sm font-medium ${trailerRequired && (!localTrailer || !allArtworksUploaded)
+                    ? "bg-gray-700 cursor-not-allowed text-gray-400"
+                    : "bg-blue-600 hover:bg-blue-700"
+                    }`}
                 >
                   Next
                 </button>
@@ -256,31 +421,45 @@ export default function UploadVideos4() {
         {showDimensionPopup && (
           <motion.div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md"
+            onClick={() => setShowDimensionPopup(false)}
+
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="bg-[#1c1c1c] rounded-3xl p-6 w-96 flex flex-col gap-6 shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+              className="relative bg-[#1c1c1c] rounded-3xl p-6 w-96 flex flex-col gap-6 shadow-2xl"
+
+
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
             >
+
+              <button
+                onClick={() => setShowDimensionPopup(false)}
+                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+              >
+                <X size={20} />
+              </button>
+
               <h2 className="text-white text-2xl font-bold mb-4 text-center">Select Artwork Size</h2>
               <div className="grid grid-cols-2 gap-5">
                 {dimensionOptions.map((option) => (
                   <motion.button
                     key={option.label}
-                    whileHover={{ scale: 1.05, y: -4 }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex flex-col items-center justify-start gap-2 bg-gradient-to-br from-purple-700 via-pink-700 to-red-600 rounded-2xl p-3 shadow-lg border border-gray-600 hover:shadow-2xl transition-all duration-300"
                     onClick={() => {
-                      setArtworkWidth(option.width);
-                      setArtworkHeight(option.height);
+                      console.log("[Artwork] size selected:", option.label);
                       setShowDimensionPopup(false);
-                      document.getElementById(`artworkFileInput-${option.label}`).click();
+                      document
+                        .getElementById(`artworkFileInput-${option.label}`)
+                        .click();
                     }}
                   >
+
                     <div
                       className="w-28 rounded-lg border border-gray-500 overflow-hidden bg-black flex items-center justify-center"
                       style={{ height: `${(option.height / option.width) * 112}px` }}

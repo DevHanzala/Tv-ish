@@ -9,6 +9,16 @@ const UploadContext = createContext();
 
 export const UploadProvider = ({ children }) => {
   const { videoId } = useParams(); // get videoId from URL
+  const [media, setMedia] = useState({
+    trailer: null,
+    artworks: {
+      "1920x1080": null,
+      "1080x1080": null,
+      "1280x720": null,
+      "720x720": null,
+    },
+  });
+
   const [uploadData, setUploadData] = useState({
     videoId: "",
     title: "",
@@ -64,7 +74,6 @@ export const UploadProvider = ({ children }) => {
 
 
       if (videoError) {
-        console.error("Failed to fetch video details:", videoError);
         setLoading(false);
         return;
       }
@@ -78,6 +87,56 @@ export const UploadProvider = ({ children }) => {
       if (captionsError) {
         console.error("Failed to fetch captions:", captionsError);
       }
+
+      // 🔹 Fetch trailer from videos table
+      const { data: trailerData, error: trailerError } = await supabase
+        .from("videos")
+        .select("trailer_path")
+        .eq("id", videoId)
+        .single();
+
+      if (trailerError) {
+        console.error("[UploadContext] trailer fetch error:", trailerError);
+      }
+
+      // 🔹 Fetch artworks from video_artworks table
+      const { data: artworkRows, error: artworkError } = await supabase
+        .from("video_artworks")
+        .select("width, height, file_path")
+        .eq("video_id", videoId);
+
+      if (artworkError) {
+        console.error("[UploadContext] artwork fetch error:", artworkError);
+      }
+
+      const artworks = {
+        "1920x1080": null,
+        "1080x1080": null,
+        "1280x720": null,
+        "720x720": null,
+      };
+
+      artworkRows?.forEach((a) => {
+        const key = `${a.width}x${a.height}`;
+        const filename = a.file_path.split("/").pop();
+
+        artworks[key] = {
+          path: a.file_path,
+          name: filename,
+        };
+
+      });
+      setMedia({
+        trailer: trailerData?.trailer_path
+          ? {
+            path: trailerData.trailer_path,
+            name: trailerData.trailer_path.split("/").pop(),
+          }
+          : null,
+
+        artworks,
+      });
+
 
 
       // Set uploadData state including captions
@@ -95,6 +154,8 @@ export const UploadProvider = ({ children }) => {
         cast: castData?.map((c) => c.name) || [],
         crew,
       });
+      console.log("[UploadContext] hydrated media:", media);
+
 
       setLoading(false);
     };
@@ -161,6 +222,7 @@ export const UploadProvider = ({ children }) => {
         uploadData,
         updateField,
         loading,
+        media,
       }}
     >
       {children}
