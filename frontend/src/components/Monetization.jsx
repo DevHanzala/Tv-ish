@@ -2,48 +2,96 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle, DollarSign } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, useParams } from "react-router-dom";
 import { useUpload } from "../context/UploadContext";
+import { upsertMonetization, monetizationData } from "../services/monetization";
+import { updateMonetizationId, updateVideoStatus } from "../services/video";
 
 export default function Monitization() {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { videoId } = useParams();
 
   const { uploadData, updateField } = useUpload();
 
-  const {
-    visibility,
-    rating,
-    legalChecks = { ownership: false, consent: false, noCopyright: false },
-    legalDoc,
-    monetizationType: savedMonetizationType,
-    adsConfig: savedAdsConfig,
-  } = uploadData || {};
+  const [localMonetizationType, setLocalMonetizationType] = useState("avod");
 
-  const [localMonetizationType, setLocalMonetizationType] = useState(savedMonetizationType || "");
-
-  const [localAdsConfig, setLocalAdsConfig] = useState(
-    savedAdsConfig || {
-      // A-VOD
-      duration: "",
-      adType: "Commercial",
-      // S-VOD
-      subscriptionType: "",
-      // PPV
-      ppvPlaceholder: "",
-    }
-  );
-
+  const [localAdsConfig, setLocalAdsConfig] = useState({
+    duration: "",
+    adType: "commercial",
+    subscriptionType: "",
+  });
   const [publishConfirm, setPublishConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!uploadData?.monetization_id) return;
+
+    const fetchMonetization = async () => {
+      const monetizationDataRes = await monetizationData(uploadData.monetization_id);
+
+      if (!monetizationDataRes.success) {
+        alert(`Error occurred: ${monetizationDataRes.error}`);
+        return;
+      }
+
+      console.log(monetizationDataRes);
+      
+
+      // row found → update local state
+      setLocalMonetizationType(monetizationDataRes.data.type || "avod");
+      setLocalAdsConfig({
+        duration: monetizationDataRes.data.ad_duration ? Number(monetizationDataRes.data.ad_duration) : "",
+        adType: monetizationDataRes.data.ad_type || "commercial",
+        subscriptionType: monetizationDataRes.data.subscription_type || "",
+      });
+    };
+
+    fetchMonetization();
+  }, [uploadData?.monetization_id]);
+
 
   useEffect(() => setOpen(true), []);
   useEffect(() => updateField("monetizationType", localMonetizationType), [localMonetizationType]);
   useEffect(() => updateField("adsConfig", localAdsConfig), [localAdsConfig]);
 
-  const handleClose = () => {
+  // updating/creating monetization fields
+  const persistMonetization = async () => {
+    const monetizationRes = await upsertMonetization(
+      uploadData.monetization_id,
+      localMonetizationType,
+      localAdsConfig
+    );
+    if (!monetizationRes.success) {
+      console.error(monetizationRes.error);
+      return false;
+    }
+    // if monetization was newly created
+    if (!uploadData.monetization_id) {
+      const updateRes = await updateMonetizationId(
+        monetizationRes.monetizationId, // ⚠️ important
+        videoId
+      );
+      if (!updateRes.success) {
+        console.error(updateRes.error);
+        return false;
+      }
+      // sync context
+      updateField("monetization_id", monetizationRes.monetizationId);
+    }
+    return true;
+  };
+
+
+  const handleClose = async () => {
+    const res = await persistMonetization();
+    console.log(true);
+    
+    if (!res) {
+      return;
+    }
     setOpen(false);
-    setTimeout(() => navigate(-1), 250);
+    navigate("/dashboard")
   };
 
   const getCurrentStep = () => {
@@ -56,11 +104,11 @@ export default function Monitization() {
   const currentStep = getCurrentStep();
 
   const handleStepClick = (step) => {
-    if (step === 1) navigate("/uploadvideos2");
-    else if (step === 2) navigate("/uploadvideos3");
-    else if (step === 3) navigate("/uploadvideos4");
-    else if (step === 4) navigate("/uploadvideos5");
-    else if (step === 5) navigate("/Monetization");
+    if (step === 1) navigate(`/uploadvideos2${videoId}`);
+    else if (step === 2) navigate(`/uploadvideos3${videoId}`);
+    else if (step === 3) navigate(`/uploadvideos4${videoId}`);
+    else if (step === 4) navigate(`/uploadvideos5${videoId}`);
+    else if (step === 5) navigate(`/Monetization${videoId}`);
   };
 
   const steps = [
@@ -71,25 +119,43 @@ export default function Monitization() {
     { id: 5, label: "Monetization" },
   ];
 
-  const handlePublish = () => {
-    const requiresDoc = legalChecks?.ownership && legalChecks?.consent;
-
-    if (!rating || !legalChecks?.ownership || !legalChecks?.noCopyright) {
-      alert("⚠️ Please complete ratings and legal confirmations before publishing.");
-      return;
-    }
-
-    if (requiresDoc && !legalDoc) {
-      alert("⚠️ Legal document upload is required.");
-      return;
-    }
-
+  const handlePublish = async () => {
     setPublishConfirm(true);
-    setTimeout(() => {
-      alert("✅ Your video has been published successfully!");
-      navigate("/");
-    }, 1200);
+    // A-VOD validation
+    if (localMonetizationType === "avod" &&
+      (!localAdsConfig?.adType || !localAdsConfig?.duration)) {
+      alert("Please select ad type and ad duration.");
+      setPublishConfirm(false);
+      return;
+    }
+
+    // S-VOD validation
+    if (localMonetizationType === "svod" &&
+      !localAdsConfig?.subscriptionType) {
+      alert("Please select a subscription model.");
+      setPublishConfirm(false);
+      return;
+    }
+
+    //update content to supabase
+    const success = await persistMonetization();
+    if (!success) {
+      alert("Failed to save monetization settings. Please try again.");
+      setPublishConfirm(false);
+      return;
+    }
+    //publish the video
+    const updateStatus = await updateVideoStatus(videoId);
+    if (!updateStatus.success) {
+      alert("Failed to publish: ", updateStatus.error);
+      setPublishConfirm(false);
+      return;
+    }
+    setPublishConfirm(false);
+    setOpen(false);
+    navigate("/dashboard");
   };
+
 
   return (
     <div className="relative min-h-screen flex items-center justify-center bg-black text-white">
@@ -135,18 +201,16 @@ export default function Monitization() {
                       <div
                         key={step.id}
                         onClick={() => handleStepClick(step.id)}
-                        className={`relative z-10 flex flex-col items-center cursor-pointer transition hover:scale-105 ${
-                          step.id > currentStep ? "opacity-60" : ""
-                        }`}
+                        className={`relative z-10 flex flex-col items-center cursor-pointer transition hover:scale-105 ${step.id > currentStep ? "opacity-60" : ""
+                          }`}
                       >
                         <div
-                          className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${
-                            isCompleted
-                              ? "bg-white border-white text-black"
-                              : isActive
+                          className={`w-10 h-10 flex items-center justify-center rounded-full border-2 ${isCompleted
+                            ? "bg-white border-white text-black"
+                            : isActive
                               ? "bg-blue-600 border-blue-600 text-white"
                               : "bg-black border-gray-400"
-                          }`}
+                            }`}
                         >
                           {isCompleted ? (
                             <CheckCircle size={18} className="text-black" />
@@ -176,11 +240,10 @@ export default function Monitization() {
                       ].map((type) => (
                         <label
                           key={type.id}
-                          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer border transition-all duration-200 ${
-                            localMonetizationType === type.id
-                              ? "bg-blue-600/20 border-blue-500 text-blue-400"
-                              : "bg-[#202020] border-gray-600 text-gray-200 hover:border-gray-400"
-                          }`}
+                          className={`flex items-center gap-2 text-sm font-medium px-3 py-2 rounded-lg cursor-pointer border transition-all duration-200 ${localMonetizationType === type.id
+                            ? "bg-blue-600/20 border-blue-500 text-blue-400"
+                            : "bg-[#202020] border-gray-600 text-gray-200 hover:border-gray-400"
+                            }`}
                         >
                           <input
                             type="radio"
@@ -200,7 +263,7 @@ export default function Monitization() {
                         <div>
                           <label className="text-sm text-gray-200 mb-2 block">Time Duration</label>
                           <select
-                            value={localAdsConfig.duration}
+                            value={localAdsConfig?.duration}
                             onChange={(e) => setLocalAdsConfig({ ...localAdsConfig, duration: e.target.value })}
                             className="bg-[#2a2a2a] border border-gray-500 rounded-lg px-3 py-2 text-sm w-full text-gray-100"
                           >
@@ -213,12 +276,12 @@ export default function Monitization() {
                         <div>
                           <label className="text-sm text-gray-200 mb-2 block">Ad Type</label>
                           <select
-                            value={localAdsConfig.adType}
+                            value={localAdsConfig?.adType}
                             onChange={(e) => setLocalAdsConfig({ ...localAdsConfig, adType: e.target.value })}
                             className="bg-[#2a2a2a] border border-gray-500 rounded-lg px-3 py-2 text-sm w-full text-gray-100"
                           >
-                            <option value="Commercial">Commercial</option>
-                            <option value="Non-commercial">Non-commercial</option>
+                            <option value="commercial">Commercial</option>
+                            <option value="non_commercial">Non-commercial</option>
                           </select>
                         </div>
                       </motion.div>
@@ -229,7 +292,7 @@ export default function Monitization() {
                       <motion.div className="mt-5 border-t border-gray-600 pt-4">
                         <label className="text-sm text-gray-200 mb-2 block">Subscription Type</label>
                         <select
-                          value={localAdsConfig.subscriptionType}
+                          value={localAdsConfig?.subscriptionType}
                           onChange={(e) => setLocalAdsConfig({ ...localAdsConfig, subscriptionType: e.target.value })}
                           className="bg-[#2a2a2a] border border-gray-500 rounded-lg px-3 py-2 text-sm w-full text-gray-100"
                         >
