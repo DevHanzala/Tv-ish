@@ -137,7 +137,7 @@ export const uploadVideo = async (userId, file, onProgress) => {
 
 // Service: Upload basic video details
 export const uploadVideoDetails = async (videoId, title, description, category) => {
-    
+
     const { error } = await supabase
         .from("videos")
         .update({
@@ -179,3 +179,54 @@ export const updateVisibilityAndAudience = async (videoId, visibility, is_18_plu
         success: true,
     };
 };
+
+//Service: update monetization id
+export const updateMonetizationId = async (monetization_id, videoId) => {
+    if (!videoId || !monetization_id) {
+        return {
+            success: false,
+            error: "videoId and monetization_id are required",
+        };
+    }
+
+    const { data, error } = await supabase
+        .from("videos")
+        .update({ monetization_id })
+        .eq("id", videoId) // assuming primary key is `id`
+        .select()
+        .single();
+
+    if (error) {
+        return {
+            success: false,
+            error: error.message || "Failed to update monetization",
+        };
+    }
+
+    return {
+        success: true,
+        video: data,
+    };
+};
+
+// Service: update the video status from draft to publish
+export const updateVideoStatus = async (videoId) => {
+    const { data, error } = await supabase
+        .from("videos")
+        .update({ upload_status: "published" })
+        .eq("id", videoId)
+        .select()
+        .single();
+
+    if (error) {
+        return {
+            success: false,
+            error: error.message || "Failed to update status",
+        };
+    }
+    return {
+        success: true,
+        data,
+    };
+};
+
